@@ -1,9 +1,9 @@
 // Guarda la app en el móvil para que abra al instante y funcione sin conexión.
 // Al cambiar cualquier archivo, sube la versión para que se actualice.
-const CACHE = "organizador-v4";
+const CACHE = "organizador-v5";
 const FILES = [
   "./", "index.html", "manifest.webmanifest", "css/styles.css",
-  "js/app.js", "js/data.js", "js/store.js",
+  "js/app.js", "js/data.js", "js/store.js", "js/photos.js",
   "icons/icon.svg", "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png",
 ];
 
