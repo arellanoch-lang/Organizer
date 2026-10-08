@@ -1,5 +1,6 @@
 import { RACE, HYBRID, WARMUP, ZONES, RUN_WEEKS, RUN_STRATEGY, RUN_RULES, IG, IG_WEEKS, IG_POSTS } from "./data.js";
 import { state, save, replaceState, uid } from "./store.js";
+import { photos, loadPhotos, addPhoto, deletePhoto, exportPhotos, importPhotos } from "./photos.js";
 
 /* ---------- utilidades ---------- */
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -100,6 +101,7 @@ function itemRow(it, showDate) {
       ${showDate && !it.done ? moveControls(it) : ""}
       ${!showDate && !it.done && it.kind === "run" ? `<label class="chg">Cambiar día <input type="date" class="mini-date" data-act="move-date" data-kind="run" data-key="${esc(it.key)}" value="${it.date}"></label>` : ""}
       ${it.link ? `<a class="item-link" href="#${it.link}">Ver en ${it.link === "insta" ? "Instagram" : AREAS[it.link]} →</a>` : ""}
+      ${it.kind === "run" && it.key.startsWith("s") ? `<a class="item-link" href="#correr:${esc(it.key)}">📝 Cómo fue →</a>` : ""}
     </div>
     ${it.done ? "" : bell(it.kind, it.key)}
   </div>`;
@@ -171,6 +173,28 @@ function viewHoy() {
     </section>`;
 }
 
+const FEEL = ["", "😫 Muy mal", "😕 Regular", "🙂 Bien", "😀 Muy bien", "🤩 Genial"];
+
+// Desplegable de cada entreno: datos, comentario y capturas del reloj.
+function runNotes(s) {
+  const n = state.runNotes[s.key] || {};
+  const pics = photos.get(s.key) || [];
+  const k = `data-key="${s.key}"`;
+  const filled = [n.km && n.km + " km", n.time, n.hr && n.hr + " ppm", FEEL[n.feel]].filter(Boolean).join(" · ");
+  return `<details class="run-notes" data-keep="run-${s.key}">
+    <summary>📝 Cómo fue${filled ? ` · <span class="muted">${esc(filled)}</span>` : ""}${pics.length ? ` · 📷 ${pics.length}` : ""}${n.text && !filled ? " · ✍️" : ""}</summary>
+    <div class="row">
+      <label>Distancia (km)<input inputmode="decimal" data-act="rnote" data-f="km" ${k} value="${esc(n.km)}" placeholder="7,2"></label>
+      <label>Tiempo<input data-act="rnote" data-f="time" ${k} value="${esc(n.time)}" placeholder="52:30"></label>
+      <label>FC media<input inputmode="numeric" data-act="rnote" data-f="hr" ${k} value="${esc(n.hr)}" placeholder="142"></label>
+    </div>
+    <label>Sensaciones<select data-act="rnote" data-f="feel" ${k}>${FEEL.map((f, i) => `<option value="${i || ""}"${String(n.feel || "") === String(i || "") ? " selected" : ""}>${f || "—"}</option>`).join("")}</select></label>
+    <label>Comentario<textarea data-act="rnote" data-f="text" ${k} rows="3" placeholder="Cómo te has sentido, molestias, ritmo por km…">${esc(n.text)}</textarea></label>
+    ${pics.length ? `<div class="pics">${pics.map(p => `<div class="pic"><img src="${p.url}" alt="Captura" data-act="photo-open" data-id="${p.id}" loading="lazy"><button type="button" class="x" aria-label="Borrar captura" data-act="photo-del" data-id="${p.id}">×</button></div>`).join("")}</div>` : ""}
+    <label class="btn upload">📷 Añadir captura del reloj<input type="file" accept="image/*" multiple hidden data-act="rphoto" ${k}></label>
+  </details>`;
+}
+
 function viewCorrer() {
   const sessions = runSessions();
   const done = sessions.filter(s => s.done).length;
@@ -193,6 +217,7 @@ function viewCorrer() {
           <input type="checkbox" aria-label="Hecho" data-act="toggle" data-kind="run" data-key="${s.key}"${s.done ? " checked" : ""}>
           <div class="item-body"><div class="item-top"><span class="item-date mono">${fd(s.date)}</span><span class="item-title">${esc(s.title)}</span><span class="tag">${RUN_TAG[s.type]}</span></div>
           <div class="item-sub">${s.type === "easy" ? "Calentamiento: " + esc(WARMUP) + "<br>" : ""}${esc(s.detail)}</div>${s.target ? `<div class="item-date mono">${esc(s.target)}</div>` : ""}
+          ${runNotes(s)}
           ${s.done ? "" : `<label class="chg">${s.date !== s.planned ? `Movido (era el ${fd(s.planned)}) · ` : ""}Cambiar día <input type="date" class="mini-date" data-act="move-date" data-kind="run" data-key="${s.key}" value="${s.date}"></label>`}</div>
           ${s.done ? "" : bell("run", s.key)}</div>`).join("")}</div>
       </section>`;
@@ -234,7 +259,7 @@ function viewInsta() {
     ${weeks.map(w => w.posts.length ? `<section><div class="week-h"><h2>${w.n}</h2><span>${fd(w.from)} – ${fd(w.to)}</span></div>
       <p class="stories"><b>Historias:</b> ${esc(w.stories)}</p><div class="list">${w.posts.map(postCard).join("")}</div></section>` : "").join("")}
     ${extraVis.length ? `<section><h2>Más publicaciones</h2><div class="list">${extraVis.map(postCard).join("")}</div></section>` : ""}
-    <details class="card"${extra.length ? "" : " open"}><summary>+ Añadir publicación</summary>
+    <details class="card" data-keep="new-post"${extra.length ? "" : " open"}><summary>+ Añadir publicación</summary>
       <form data-form="post" class="form">
         <label>Título<input name="title" required></label>
         <div class="row"><label>Fecha<input type="date" name="date" required></label><label>Hora<input type="time" name="time" value="20:00"></label>
@@ -255,7 +280,7 @@ function viewFreelance() {
   const due = cs.filter(c => { const f = nextFollowup(c); return f && f.date <= t; }).length;
   return `<header class="hero"><p class="eyebrow">Apps y webs</p><h1>Freelance</h1>
       <p class="lead">${plural(state.contacts.length, "contacto", "contactos")}${due ? ` · <b>${plural(due, "pendiente", "pendientes")} de contactar</b>` : ""}</p></header>
-    <details class="card"${state.contacts.length ? "" : " open"}><summary>+ Nuevo contacto</summary>
+    <details class="card" data-keep="new-contact"${state.contacts.length ? "" : " open"}><summary>+ Nuevo contacto</summary>
       <form data-form="contact" class="form">
         <label>Nombre<input name="name" required autocomplete="off"></label>
         <label>Empresa o proyecto<input name="company" autocomplete="off"></label>
@@ -316,7 +341,15 @@ function viewUnixo() {
       <p class="lead">${all.length ? `<b>${done}/${all.length}</b> pasos hechos` : "Crea las fases del plan y sus pasos."}</p>
       ${all.length ? `<div class="bar"><i style="width:${(done / all.length) * 100}%"></i></div>` : ""}</header>
     ${step ? `<div class="card next-step"><p class="eyebrow">Siguiente paso</p><p><b>${esc(step.task.text)}</b></p><p class="muted small">${esc(step.phase.name)}${step.task.date ? " · " + fd(step.task.date) : ""}</p></div>` : ""}
-    <details class="card"${state.unixo.summary ? "" : " open"}><summary>El plan (resumen)</summary>
+    <details class="card" data-keep="ux-help"><summary>¿Cómo se usa?</summary>
+      <ol class="rules">
+        <li>Haz solo el <b>siguiente paso</b> de arriba. También te sale en «Tu día» y, si tiene fecha, ese día.</li>
+        <li>Cuando lo hagas, márcalo ✓ y aparece el siguiente.</li>
+        <li>Si un proveedor te contesta, apunta lo importante en «Proveedores y notas del plan».</li>
+        <li>¿Surge algo nuevo? Añádelo como paso dentro de su fase, con fecha si la tiene.</li>
+        <li>Si una fecha no te cuadra, cámbiala en el propio paso.</li>
+      </ol></details>
+    <details class="card" data-keep="ux-summary"${state.unixo.summary ? "" : " open"}><summary>Proveedores y notas del plan</summary>
       <textarea data-act="uxsummary" rows="6" placeholder="Objetivo, precios, proveedores, canales de venta…">${esc(state.unixo.summary)}</textarea></details>
     ${state.unixo.phases.map(p => {
       const d = p.tasks.filter(t => t.done).length;
@@ -353,11 +386,44 @@ function viewIdeas() {
 }
 
 const VIEWS = { hoy: viewHoy, correr: viewCorrer, insta: viewInsta, freelance: viewFreelance, unixo: viewUnixo, ideas: viewIdeas };
-const tab = () => (VIEWS[location.hash.slice(1)] ? location.hash.slice(1) : "hoy");
+const route = () => location.hash.slice(1).split(":");
+const tab = () => (VIEWS[route()[0]] ? route()[0] : "hoy");
 
+// Lo que vas escribiendo en un formulario se guarda al momento, para no
+// perderlo si la app se recarga o se cierra el desplegable sin querer.
+const DRAFTS = "organizer-drafts";
+const draftId = f => f.dataset.form + ":" + (f.dataset.cid || f.dataset.pid || "");
+function readDrafts() { try { return JSON.parse(localStorage.getItem(DRAFTS) || "{}"); } catch (e) { return {}; } }
+function writeDrafts(d) { try { localStorage.setItem(DRAFTS, JSON.stringify(d)); } catch (e) { /* sin espacio: no pasa nada */ } }
+
+document.addEventListener("input", e => {
+  const f = e.target.closest("form[data-form]");
+  if (!f || !e.target.name) return;
+  const d = readDrafts();
+  d[draftId(f)] = Object.fromEntries([...new FormData(f).entries()].filter(([, v]) => typeof v === "string"));
+  writeDrafts(d);
+});
+
+function restoreDrafts() {
+  const d = readDrafts();
+  document.querySelectorAll("form[data-form]").forEach(f => {
+    const v = d[draftId(f)];
+    if (!v || !Object.values(v).some(x => x && x.trim())) return;
+    for (const [name, val] of Object.entries(v)) { const el = f.elements[name]; if (el && "value" in el) el.value = val; }
+    const det = f.closest("details");
+    if (det) det.open = true;
+  });
+}
+
+let renderedDay = "";
 function render() {
   const t = tab();
-  document.getElementById("view").innerHTML = VIEWS[t]();
+  const view = document.getElementById("view");
+  const keep = new Set([...view.querySelectorAll("details[data-keep][open]")].map(d => d.dataset.keep));
+  view.innerHTML = VIEWS[t]();
+  view.querySelectorAll("details[data-keep]").forEach(d => { if (keep.has(d.dataset.keep)) d.open = true; });
+  restoreDrafts();
+  renderedDay = today();
   document.querySelectorAll("nav.tabs a").forEach(a => a.toggleAttribute("aria-current", a.getAttribute("href") === "#" + t));
   const late = agenda("0000-01-01", addDays(today(), -1)).filter(i => !i.done && i.kind !== "run").length
     + agenda(today(), today()).filter(i => !i.done).length;
@@ -425,6 +491,15 @@ document.addEventListener("change", e => {
   const el = e.target, act = el.dataset.act;
   if (act === "toggle") return toggle(el.dataset.kind, el.dataset.key, el.checked);
   if (act === "move-date") return moveTo(el.dataset.kind, el.dataset.key, el.value);
+  if (act === "rnote") { (state.runNotes[el.dataset.key] ||= {})[el.dataset.f] = el.value; return save(); }
+  if (act === "rphoto") {
+    const files = [...el.files];
+    el.value = "";
+    Promise.all(files.map(f => addPhoto(el.dataset.key, f)))
+      .catch(err => alert("No se ha podido guardar la captura: " + err.message))
+      .then(render);
+    return;
+  }
   if (act === "cstatus") { findContact(el.dataset.cid).status = el.value; save(); return render(); }
   if (act === "cnotes") { findContact(el.dataset.cid).notes = el.value; return save(); }
   if (act === "uxsummary") { state.unixo.summary = el.value; return save(); }
@@ -440,6 +515,8 @@ document.addEventListener("click", e => {
   if (act === "copy") return copyCaption(el.dataset.id, el);
   if (act === "move") return moveTo(el.dataset.kind, el.dataset.key, el.dataset.to);
   if (act === "remind") return openRemind(el.dataset.kind, el.dataset.key);
+  if (act === "photo-open") { document.getElementById("photo-img").src = el.src; return document.getElementById("photo").showModal(); }
+  if (act === "photo-del") { if (confirm("¿Borrar esta captura?")) deletePhoto(el.dataset.id).then(render); return; }
   if (act === "igfilter") { igFilter = el.dataset.f; return render(); }
   if (act === "del-post" && confirm("¿Borrar esta publicación?")) {
     state.igExtra = state.igExtra.filter(p => p.id !== el.dataset.id); delete state.igDone[el.dataset.id];
@@ -486,6 +563,7 @@ document.addEventListener("submit", e => {
   } else if (kind === "uxphase") {
     state.unixo.phases.push({ id: uid(), name: v.name, tasks: [] });
   }
+  const d = readDrafts(); delete d[draftId(f)]; writeDrafts(d);
   save(); render();
   if (kind === "quick") document.getElementById("q-text")?.focus();
 });
@@ -555,8 +633,10 @@ document.getElementById("r-go").addEventListener("click", () => {
 /* ---------- copia de seguridad ---------- */
 const menu = document.getElementById("menu");
 document.getElementById("menu-btn").addEventListener("click", () => menu.showModal());
-document.getElementById("export").addEventListener("click", () => {
-  const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+document.getElementById("export").addEventListener("click", async () => {
+  let pics = [];
+  try { pics = await exportPhotos(); } catch (e) { /* sin capturas */ }
+  const blob = new Blob([JSON.stringify({ ...state, photos: pics })], { type: "application/json" });
   const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: `organizador-${today()}.json` });
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
@@ -567,14 +647,21 @@ document.getElementById("import").addEventListener("change", async e => {
   try {
     const data = JSON.parse(await file.text());
     if (!confirm("Esto sustituye todos los datos de este dispositivo por los de la copia. ¿Seguir?")) return;
-    replaceState(data);
+    const { photos: pics, ...rest } = data;
+    replaceState(rest);
+    if (pics) await importPhotos(pics);
     menu.close(); render();
   } catch (err) { alert("No se ha podido leer la copia: " + err.message); }
   finally { e.target.value = ""; }
 });
 
 /* ---------- arranque ---------- */
-window.addEventListener("hashchange", () => { render(); window.scrollTo(0, 0); });
+window.addEventListener("hashchange", () => {
+  render();
+  const focus = route()[1] && document.querySelector(`details[data-keep="run-${CSS.escape(route()[1])}"]`);
+  if (focus) { focus.open = true; focus.closest(".item").scrollIntoView({ block: "center" }); }
+  else window.scrollTo(0, 0);
+});
 
 // La app siempre abre en «Tu día». Si vuelves tras más de 15 minutos fuera
 // (o al día siguiente), también vuelve a «Tu día»; si no, sigue donde estabas.
@@ -583,10 +670,11 @@ let hiddenAt = 0;
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) { hiddenAt = Date.now(); return; }
   if (Date.now() - hiddenAt > AWAY && tab() !== "hoy") location.hash = "hoy";
-  else render();
+  else if (today() !== renderedDay) render(); // solo si ha cambiado el día: así no se pierde lo que estés escribiendo
 });
 if (location.hash !== "#hoy") history.replaceState(null, "", "#hoy");
 render();
+loadPhotos().then(() => { if (tab() === "correr") render(); }).catch(() => {});
 
 if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
 if ("serviceWorker" in navigator && location.protocol !== "file:") navigator.serviceWorker.register("sw.js").catch(() => {});

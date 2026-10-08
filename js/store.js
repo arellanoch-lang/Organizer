@@ -1,4 +1,4 @@
-import { SEED_CONTACTS } from "./data.js";
+import { SEED_CONTACTS, UNIXO_SEED } from "./data.js";
 
 // Todo se guarda en este dispositivo (localStorage). Usa «Copia de seguridad»
 // para pasar los datos a otro móvil o guardarlos fuera.
@@ -9,6 +9,7 @@ const empty = () => ({
   version: 1,
   runDone: {},     // id de sesión ("s2026-10-07", "f2026-10-06") -> true/false
   runMove: {},     // entreno o clase de hybrid -> nuevo día
+  runNotes: {},    // entreno -> { km, time, hr, feel, text }
   igDone: {},      // fecha de publicación -> true/false
   igMove: {},      // publicación del plan -> nueva fecha
   igExtra: [],     // publicaciones añadidas a mano
@@ -20,11 +21,16 @@ const empty = () => ({
 export let state = load();
 
 function load() {
+  let st = null;
   try {
     const raw = JSON.parse(localStorage.getItem(KEY) || "null");
-    if (raw && typeof raw === "object") return { ...empty(), ...raw, unixo: { ...empty().unixo, ...(raw.unixo || {}) } };
+    if (raw && typeof raw === "object") st = { ...empty(), ...raw, unixo: { ...empty().unixo, ...(raw.unixo || {}) } };
   } catch (e) { /* datos corruptos o almacenamiento bloqueado: empezamos de cero */ }
-  return { ...empty(), contacts: structuredClone(SEED_CONTACTS) };
+  st ||= { ...empty(), contacts: structuredClone(SEED_CONTACTS) };
+  // El plan de UNIXO se carga una sola vez, y solo si la sección está vacía.
+  if (!st.unixoSeeded && !st.unixo.phases.length && !st.unixo.summary) st.unixo = structuredClone(UNIXO_SEED);
+  st.unixoSeeded = true;
+  return st;
 }
 
 export function save() {

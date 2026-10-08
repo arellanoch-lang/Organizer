@@ -172,3 +172,44 @@ export const SEED_CONTACTS = [
     followups: [{ id: "f-clinica-1", date: "2027-01-11", reason: "Volver a ofrecer la web", done: false }],
     log: [{ date: "2026-09-23", text: "Boceto enviado. Por ahora no está interesada" }] },
 ];
+
+// Plan de UNIXO montado a partir de los correos con proveedores (hasta el 8 oct).
+// Solo se carga si la sección UNIXO está vacía. Todo se puede editar en la app.
+export const UNIXO_SEED = {
+  summary: `Sudaderas con capucha personalizadas. Primera tirada pequeña para probar: 30 unidades por color.
+
+PROVEEDORES
+• Raquel Castro (Parâmetros e Sonhos, Guimarães) · raquel.ma@sapo.pt · +351 960 282 838
+  Hoodie 450 GSM oversized brushed fleece garment dye, ya personalizada.
+  30 uds/color: 38,5 €/ud (50 uds: 38 €/ud). Colores que recomienda: 820 charcoal y azul 435.
+  Producción 4–5 semanas. Muestra: 2 semanas y cuesta el doble (+100 %).
+  No incluye etiquetas ni transporte. Espera tu respuesta desde el 29 sep.
+• Maragatas Confecções (Eduardo) · maragatasconfecoes@gmail.com
+  Mínimo 50 uds por color y modelo. Hacen bordado y DTF. Tiene la ficha desde el 14 sep; sin presupuesto aún.
+• Formas Serigrafía (Esquiroz, Navarra) · Itsasne / Marta · 948 31 66 29 · L–V de 6 a 14 h
+  Para presupuestar el estampado necesitan: archivos vectorizados y a tamaño (también la capucha),
+  el Pantone (o elegir en su carta de colores) y saber quién pone las prendas y quién plancha.
+• Sin respuesta: HTH Têxteis, Carmafil, Blusa (Arpitex te pasó a Raquel).`,
+  phases: [
+    { id: "ux1", name: "1. Elegir proveedor", tasks: [
+      { id: "ux1a", text: "Formas Serigrafía: mandar archivos vectorizados a tamaño (delante, espalda y capucha), Pantone, y decir quién pone las prendas y el planchado", date: "2026-10-09", done: false },
+      { id: "ux1b", text: "Maragatas: pedir el presupuesto de muestra y de producción con la ficha del 14 sep", date: "2026-10-09", done: false },
+      { id: "ux1c", text: "Raquel: preguntar precio de la muestra, de etiquetas y del transporte a España", date: "2026-10-12", done: false },
+      { id: "ux1d", text: "Comparar opciones (precio final por sudadera, mínimo, plazo) y elegir", date: "2026-10-16", done: false },
+    ] },
+    { id: "ux2", name: "2. Muestra", tasks: [
+      { id: "ux2a", text: "Elegir color(es) y pedir la muestra", date: "2026-10-19", done: false },
+      { id: "ux2b", text: "Revisar la muestra: tejido, talla, estampado y lavado", date: "2026-11-02", done: false },
+    ] },
+    { id: "ux3", name: "3. Producción", tasks: [
+      { id: "ux3a", text: "Decidir tallas y cantidades (30 por color) y confirmar el pedido", date: "2026-11-06", done: false },
+      { id: "ux3b", text: "Etiquetas y bolsas o packaging", date: "", done: false },
+      { id: "ux3c", text: "Recibir la producción (4–5 semanas)", date: "2026-12-11", done: false },
+    ] },
+    { id: "ux4", name: "4. Venta", tasks: [
+      { id: "ux4a", text: "Calcular el coste total por sudadera y fijar el precio de venta", date: "", done: false },
+      { id: "ux4b", text: "Decidir dónde vender (Instagram, conocidos, web…)", date: "", done: false },
+      { id: "ux4c", text: "Fotos de producto con la muestra", date: "", done: false },
+    ] },
+  ],
+};
