@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Mi Organizador</title>
+  <meta name="description" content="Plan del día: 10K, Instagram, freelance, UNIXO e ideas.">
+  <meta name="theme-color" content="#F4F2EE" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#16181D" media="(prefers-color-scheme: dark)">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Organizador">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="topbar">
+    <span class="brand">Organizador</span>
+    <button id="menu-btn" class="btn ghost" type="button" aria-label="Copia de seguridad e instalación">⋯</button>
+  </div>
+
+  <main id="view" class="wrap"></main>
+
+  <nav class="tabs" aria-label="Secciones">
+    <a href="#hoy"><span aria-hidden="true">☀️</span>Mi día<b id="badge" class="badge" hidden></b></a>
+    <a href="#correr"><span aria-hidden="true">🏃</span>10K</a>
+    <a href="#insta"><span aria-hidden="true">📸</span>Insta</a>
+    <a href="#freelance"><span aria-hidden="true">💼</span>Clientes</a>
+    <a href="#unixo"><span aria-hidden="true">🧥</span>UNIXO</a>
+    <a href="#ideas"><span aria-hidden="true">💡</span>Ideas</a>
+  </nav>
+
+  <dialog id="menu">
+    <form method="dialog" class="dialog-close"><button class="btn ghost" aria-label="Cerrar">×</button></form>
+    <h2>Tus datos</h2>
+    <p>Todo se guarda solo en este dispositivo. Haz una copia de vez en cuando (por ejemplo, cada domingo) y guárdala en Drive o envíatela por email.</p>
+    <div class="row">
+      <button id="export" class="btn primary" type="button">Descargar copia</button>
+      <label class="btn">Restaurar copia<input id="import" type="file" accept="application/json,.json" hidden></label>
+    </div>
+    <h2>Instalar en la pantalla de inicio</h2>
+    <p><b>iPhone (Safari):</b> botón Compartir → «Añadir a pantalla de inicio».</p>
+    <p><b>Android (Chrome):</b> menú ⋮ → «Instalar aplicación» o «Añadir a pantalla de inicio».</p>
+  </dialog>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
