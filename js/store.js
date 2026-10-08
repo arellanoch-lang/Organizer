@@ -8,6 +8,7 @@ const KEY = "organizer-v1";
 const empty = () => ({
   version: 1,
   runDone: {},     // id de sesión ("s2026-10-07", "f2026-10-06") -> true/false
+  runMove: {},     // entreno o clase de hybrid -> nuevo día
   igDone: {},      // fecha de publicación -> true/false
   igMove: {},      // publicación del plan -> nueva fecha
   igExtra: [],     // publicaciones añadidas a mano

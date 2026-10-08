@@ -25,15 +25,22 @@ function runSessions() {
   const out = [];
   RUN_WEEKS.forEach(w => w.s.forEach(([date, type, title, detail, target, pre]) => {
     const key = "s" + date;
-    out.push({ date, key, type, title, detail, target, week: w.n, done: state.runDone[key] ?? !!pre });
+    out.push({ date: state.runMove[key] || date, planned: date, key, type, title, detail, target, week: w.n, done: state.runDone[key] ?? !!pre });
   }));
-  return out;
+  return out.sort((a, b) => a.date.localeCompare(b.date));
 }
 
+// Clases de hybrid entre dos fechas, ya con los cambios de día aplicados.
+// Se miran 31 días a cada lado por si alguna se ha movido dentro del rango.
 function hybridDays(from, to) {
   const out = [];
-  for (let d = from < HYBRID.from ? HYBRID.from : from; d <= to; d = addDays(d, 1)) {
-    if (HYBRID.days.includes(new Date(d + "T12:00").getDay())) out.push(d);
+  const start = addDays(from, -31) < HYBRID.from ? HYBRID.from : addDays(from, -31);
+  const cap = addDays(today(), 400);
+  const end = addDays(to, 31) > cap ? cap : addDays(to, 31);
+  for (let d = start; d <= end; d = addDays(d, 1)) {
+    if (!HYBRID.days.includes(new Date(d + "T12:00").getDay())) continue;
+    const date = state.runMove["h" + d] || d;
+    if (date >= from && date <= to) out.push({ key: "h" + d, date });
   }
   return out;
 }
@@ -53,8 +60,8 @@ function agenda(from, to) {
   runSessions().forEach(s => {
     if (inR(s.date)) out.push({ date: s.date, kind: "run", key: s.key, area: "run", title: (s.type === "race" ? "🏁 " : "🏃 ") + s.title, sub: [s.type === "easy" ? "Antes, de calentamiento: " + WARMUP : "", s.detail, s.target].filter(Boolean).join(" · "), done: s.done });
   });
-  hybridDays(from, to).forEach(d => {
-    out.push({ date: d, time: HYBRID.time, kind: "run", key: "h" + d, area: "run", title: "🏋️ " + HYBRID.title, sub: "Clase", done: !!state.runDone["h" + d] });
+  hybridDays(from, to).forEach(h => {
+    out.push({ date: h.date, time: HYBRID.time, kind: "run", key: h.key, area: "run", title: "🏋️ " + HYBRID.title, sub: "Clase", done: !!state.runDone[h.key] });
   });
   igPosts().forEach(p => {
     if (inR(p.date)) out.push({ date: p.date, time: p.time || "", kind: "ig", key: p.id, area: "ig", title: `${fname(p.f)}: ${p.title}`, sub: p.need ? "Material: " + p.need : "", done: p.done, link: "insta" });
@@ -91,10 +98,14 @@ function itemRow(it, showDate) {
       ${it.sub ? `<div class="item-sub">${esc(it.sub)}</div>` : ""}
       ${showDate ? `<div class="item-date">${fd(it.date)}</div>` : ""}
       ${showDate && !it.done ? moveControls(it) : ""}
+      ${!showDate && !it.done && it.kind === "run" ? `<label class="chg">Cambiar día <input type="date" class="mini-date" data-act="move-date" data-kind="run" data-key="${esc(it.key)}" value="${it.date}"></label>` : ""}
       ${it.link ? `<a class="item-link" href="#${it.link}">Ver en ${it.link === "insta" ? "Instagram" : AREAS[it.link]} →</a>` : ""}
     </div>
+    ${it.done ? "" : bell(it.kind, it.key)}
   </div>`;
 }
+
+const bell = (kind, key) => `<button type="button" class="bell" aria-label="Avisarme" title="Avisarme" data-act="remind" data-kind="${kind}" data-key="${esc(key)}">🔔</button>`;
 
 // Botones para pasar algo atrasado a otro día.
 function moveControls(it) {
@@ -181,10 +192,12 @@ function viewCorrer() {
         <div class="list">${ss.map(s => `<div class="item${s.done ? " done" : ""}${s.type === "race" ? " race" : ""}" style="--c:var(--r-${s.type === "test" ? "fast" : s.type})">
           <input type="checkbox" aria-label="Hecho" data-act="toggle" data-kind="run" data-key="${s.key}"${s.done ? " checked" : ""}>
           <div class="item-body"><div class="item-top"><span class="item-date mono">${fd(s.date)}</span><span class="item-title">${esc(s.title)}</span><span class="tag">${RUN_TAG[s.type]}</span></div>
-          <div class="item-sub">${s.type === "easy" ? "Calentamiento: " + esc(WARMUP) + "<br>" : ""}${esc(s.detail)}</div>${s.target ? `<div class="item-date mono">${esc(s.target)}</div>` : ""}</div></div>`).join("")}</div>
+          <div class="item-sub">${s.type === "easy" ? "Calentamiento: " + esc(WARMUP) + "<br>" : ""}${esc(s.detail)}</div>${s.target ? `<div class="item-date mono">${esc(s.target)}</div>` : ""}
+          ${s.done ? "" : `<label class="chg">${s.date !== s.planned ? `Movido (era el ${fd(s.planned)}) · ` : ""}Cambiar día <input type="date" class="mini-date" data-act="move-date" data-kind="run" data-key="${s.key}" value="${s.date}"></label>`}</div>
+          ${s.done ? "" : bell("run", s.key)}</div>`).join("")}</div>
       </section>`;
     }).join("")}
-    <section><h2>Calentamiento y hybrid</h2><div class="card"><p><b>Días de rodaje suave:</b> antes de salir, ${esc(WARMUP)}</p><p class="muted">Martes y jueves: hybrid a las ${HYBRID.time}. Aparece en «Hoy» para marcarlo.</p></div></section>
+    <section><h2>Calentamiento y hybrid</h2><div class="card"><p><b>Días de rodaje suave:</b> antes de salir, ${esc(WARMUP)}</p><p class="muted">Martes y jueves: hybrid a las ${HYBRID.time}. Aparece en «Tu día», donde puedes marcarlo o cambiarlo de día.</p></div></section>
     <section><h2>Estrategia de carrera</h2><div class="card"><table class="tbl">${RUN_STRATEGY.map(([a, b]) => `<tr><td class="mono">${a}</td><td>${esc(b)}</td></tr>`).join("")}</table></div></section>
     <section><h2>Reglas del plan</h2><ul class="card rules">${RUN_RULES.map(r => `<li>${esc(r)}</li>`).join("")}</ul></section>`;
 }
@@ -200,6 +213,7 @@ function postCard(p) {
     <div class="actions">
       ${p.cap ? `<button type="button" class="btn" data-act="copy" data-id="${esc(p.id)}">Copiar texto</button>` : ""}
       <label class="check"><input type="checkbox" data-act="toggle" data-kind="ig" data-key="${esc(p.id)}"${p.done ? " checked" : ""}> Publicado</label>
+      ${p.done ? "" : `<button type="button" class="btn" data-act="remind" data-kind="ig" data-key="${esc(p.id)}">🔔 Avisarme</button>`}
       ${p.extra ? `<button type="button" class="btn ghost" data-act="del-post" data-id="${esc(p.id)}">Borrar</button>` : ""}
     </div>
   </article>`;
@@ -271,6 +285,7 @@ function contactCard(c, t) {
       <div class="list">${fus.map(f => `<div class="item${f.done ? " done" : ""}" style="--c:var(--a-freelance)">
         <input type="checkbox" aria-label="Hecho" data-act="toggle" data-kind="fu" data-key="${c.id}|${f.id}"${f.done ? " checked" : ""}>
         <div class="item-body"><div class="item-top"><span class="item-date mono">${fd(f.date)}</span><span class="item-title">${esc(f.reason)}</span></div></div>
+        ${f.done ? "" : bell("fu", `${c.id}|${f.id}`)}
         <button type="button" class="x" aria-label="Borrar" data-act="del-fu" data-key="${c.id}|${f.id}">×</button></div>`).join("") || `<p class="empty">Nada programado.</p>`}</div>
       <form data-form="fu" data-cid="${c.id}" class="row">
         <input type="date" name="date" required aria-label="Fecha">
@@ -361,7 +376,8 @@ function findUx(key) {
 
 function moveTo(kind, key, date) {
   if (!date) return;
-  if (kind === "task") { const t = state.tasks.find(x => x.id === key); if (t) t.date = date; }
+  if (kind === "run") state.runMove[key] = date;
+  else if (kind === "task") { const t = state.tasks.find(x => x.id === key); if (t) t.date = date; }
   else if (kind === "ux") { const { t } = findUx(key); if (t) t.date = date; }
   else if (kind === "fu") {
     const [cid, fid] = key.split("|");
@@ -423,6 +439,7 @@ document.addEventListener("click", e => {
   const act = el.dataset.act;
   if (act === "copy") return copyCaption(el.dataset.id, el);
   if (act === "move") return moveTo(el.dataset.kind, el.dataset.key, el.dataset.to);
+  if (act === "remind") return openRemind(el.dataset.kind, el.dataset.key);
   if (act === "igfilter") { igFilter = el.dataset.f; return render(); }
   if (act === "del-post" && confirm("¿Borrar esta publicación?")) {
     state.igExtra = state.igExtra.filter(p => p.id !== el.dataset.id); delete state.igDone[el.dataset.id];
@@ -478,6 +495,62 @@ document.addEventListener("toggle", e => {
   const d = e.target;
   if (d.classList && d.classList.contains("contact")) d.open ? openContacts.add(d.dataset.cid) : openContacts.delete(d.dataset.cid);
 }, true);
+
+/* ---------- avisos ---------- */
+// Sin servidor la app no puede mandar notificaciones con el móvil bloqueado.
+// En su lugar crea un evento con alarma (.ics) que se guarda en la app de
+// calendario del móvil, y es esa app la que avisa a la hora.
+const remindDlg = document.getElementById("remind");
+let remindItem = null;
+
+function findItem(kind, key) {
+  return agenda("2000-01-01", addDays(today(), 400)).find(i => i.kind === kind && i.key === key);
+}
+
+function openRemind(kind, key) {
+  const it = findItem(kind, key);
+  if (!it) return;
+  remindItem = it;
+  let date = it.date < today() ? today() : it.date, time = "09:00";
+  if (it.time) {
+    const d = new Date(`${it.date}T${it.time}`);
+    d.setMinutes(d.getMinutes() - 30);
+    if (iso(d) === it.date) time = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+  document.getElementById("r-title").textContent = it.title.replace(/^\p{Extended_Pictographic}\uFE0F?\s*/u, "");
+  document.getElementById("r-date").value = date;
+  document.getElementById("r-time").value = time;
+  remindDlg.showModal();
+}
+
+const icsText = s => String(s).replace(/\\/g, "\\\\").replace(/([,;])/g, "\\$1").replace(/\r?\n/g, "\\n");
+
+function downloadReminder(it, date, time) {
+  const stamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d+/, "");
+  const start = date.replace(/-/g, "") + "T" + time.replace(":", "") + "00";
+  const title = it.title.replace(/^\p{Extended_Pictographic}\uFE0F?\s*/u, "");
+  const desc = [it.time ? `A las ${it.time}` : "", it.sub || ""].filter(Boolean).join(". ");
+  const ics = [
+    "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Organizador//ES", "CALSCALE:GREGORIAN",
+    "BEGIN:VEVENT", `UID:${uid()}@organizador`, `DTSTAMP:${stamp}`, `DTSTART:${start}`, "DURATION:PT15M",
+    `SUMMARY:${icsText("🔔 " + title)}`, `DESCRIPTION:${icsText(desc)}`,
+    "BEGIN:VALARM", "ACTION:DISPLAY", `DESCRIPTION:${icsText(title)}`, "TRIGGER:PT0M", "END:VALARM",
+    "END:VEVENT", "END:VCALENDAR", "",
+  ].join("\r\n");
+  const a = Object.assign(document.createElement("a"), {
+    href: URL.createObjectURL(new Blob([ics], { type: "text/calendar" })),
+    download: `aviso-${date}.ics`,
+  });
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+document.getElementById("r-go").addEventListener("click", () => {
+  const date = document.getElementById("r-date").value, time = document.getElementById("r-time").value;
+  if (!remindItem || !date || !time) return;
+  downloadReminder(remindItem, date, time);
+  remindDlg.close();
+});
 
 /* ---------- copia de seguridad ---------- */
 const menu = document.getElementById("menu");

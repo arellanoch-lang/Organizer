@@ -107,6 +107,11 @@ details.card[open] > summary { margin-bottom: 10px; }
 .sum.done { text-decoration: line-through; color: var(--muted); }
 .move { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 6px; }
 .move .mini-date { margin-top: 0; }
+.bell { border: 0; background: none; font-size: 18px; padding: 0 2px; cursor: pointer; opacity: .55; flex: none; }
+.bell:hover, .bell:focus-visible { opacity: 1; }
+.chg { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 13px; color: var(--muted); margin-top: 4px; }
+.chg .mini-date { margin-top: 0; }
+dialog label { display: grid; gap: 4px; font-size: 14px; color: var(--muted); }
 .item-link { font-size: 13px; text-decoration: none; }
 .tag { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--c); }
 .x { border: 0; background: none; color: var(--muted); font-size: 22px; line-height: 1; padding: 0 4px; cursor: pointer; }

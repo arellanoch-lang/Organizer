@@ -46,6 +46,18 @@
     <p><b>Android (Chrome):</b> menú ⋮ → «Instalar aplicación» o «Añadir a pantalla de inicio».</p>
   </dialog>
 
+  <dialog id="remind">
+    <form method="dialog" class="dialog-close"><button class="btn ghost" aria-label="Cerrar">×</button></form>
+    <h2>🔔 Avisarme</h2>
+    <p id="r-title"></p>
+    <div class="row">
+      <label>Día<input type="date" id="r-date"></label>
+      <label>Hora del aviso<input type="time" id="r-time"></label>
+    </div>
+    <p class="hint">Se descarga un aviso. Ábrelo desde la notificación de descarga y elige tu app de calendario para guardarlo: te avisará a esa hora aunque el organizador esté cerrado.</p>
+    <button id="r-go" class="btn primary" type="button">Crear aviso</button>
+  </dialog>
+
   <script type="module" src="js/app.js"></script>
 </body>
 </html>
