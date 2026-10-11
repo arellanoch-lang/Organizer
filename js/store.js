@@ -12,6 +12,7 @@ const empty = () => ({
   runNotes: {},    // entreno -> { km, time, hr, feel, text }
   igDone: {},      // fecha de publicación -> true/false
   igMove: {},      // publicación del plan -> nueva fecha
+  igHidden: {},    // publicaciones del plan que has borrado
   igExtra: [],     // publicaciones añadidas a mano
   tasks: [],       // {id, text, date, area, done, created}
   contacts: [],    // {id, name, company, phone, email, status, notes, followups[], log[]}

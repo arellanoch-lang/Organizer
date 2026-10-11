@@ -51,6 +51,7 @@ function igPosts() {
   const base = IG_POSTS.map(p => ({ ...p, id: "ig" + p.date, extra: false, date: (state.igMove || {})["ig" + p.date] || p.date }));
   const extra = state.igExtra.map(p => ({ ...p, extra: true }));
   return [...base, ...extra]
+    .filter(p => !(state.igHidden || {})[p.id])
     .map(p => ({ ...p, done: state.igDone[p.id] ?? !!p.pre }))
     .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
 }
@@ -81,8 +82,11 @@ function agenda(from, to) {
   return out.sort((a, b) => a.date.localeCompare(b.date) || (a.time || "").localeCompare(b.time || "") || order[a.kind] - order[b.kind]);
 }
 
+// Pasos de una fase ordenados por fecha; los que no tienen fecha, al final.
+const byDate = tasks => [...tasks].sort((a, b) => (a.date || "9999").localeCompare(b.date || "9999"));
+
 function nextUnixoStep() {
-  for (const p of state.unixo.phases) for (const t of p.tasks) if (!t.done) return { phase: p, task: t };
+  for (const p of state.unixo.phases) for (const t of byDate(p.tasks)) if (!t.done) return { phase: p, task: t };
   return null;
 }
 
@@ -117,6 +121,8 @@ function moveControls(it) {
     <button type="button" class="btn small" data-act="move" ${k} data-to="${today()}">Hoy</button>
     <button type="button" class="btn small" data-act="move" ${k} data-to="${addDays(today(), 1)}">Mañana</button>
     <input type="date" class="mini-date" data-act="move-date" ${k} min="${today()}" aria-label="Otra fecha">
+    ${it.kind === "ig" ? `<button type="button" class="btn small danger" data-act="del-post" data-id="${esc(it.key)}">Borrar</button>` : ""}
+    ${it.kind === "task" ? `<button type="button" class="btn small danger" data-act="del-task-late" data-key="${esc(it.key)}">Borrar</button>` : ""}
   </div>`;
 }
 
@@ -165,7 +171,7 @@ function viewHoy() {
     ${timed.length ? `<section><h2>Con hora</h2><div class="list">${timed.map(i => itemRow(i)).join("")}</div></section>` : ""}
     ${!now.length ? `<p class="empty">Nada en la agenda de hoy. Aprovecha para la bandeja de ideas o el siguiente paso de UNIXO.</p>` : ""}
     ${overdue.length ? `<section><h2 class="late-h">Atrasado</h2><div class="list">${overdue.map(i => itemRow(i, true)).join("")}</div></section>` : ""}
-    ${step ? `<section><h2>Siguiente paso UNIXO</h2>${itemRow({ kind: "ux", key: `${step.phase.id}|${step.task.id}`, area: "unixo", title: step.task.text, sub: step.phase.name + (step.task.date ? " · " + fd(step.task.date) : ""), done: false, link: "unixo" })}</section>` : ""}
+    ${step ? `<section><h2>Siguiente paso UNIXO</h2>${itemRow({ kind: "ux", key: `${step.phase.id}|${step.task.id}`, area: "unixo", title: step.task.text, sub: step.phase.name + (step.task.date ? " · " + fd(step.task.date) : "") + (step.task.notes ? " · " + step.task.notes : ""), done: false, link: "unixo" })}</section>` : ""}
     <section><h2>Apuntar algo</h2>${quickForm()}</section>
     ${inbox ? `<a class="card inbox" href="#ideas">💡 ${plural(inbox, "idea sin fecha", "ideas sin fecha")} en la bandeja →</a>` : ""}
     <section><h2>Próximos 7 días</h2>
@@ -239,7 +245,7 @@ function postCard(p) {
       ${p.cap ? `<button type="button" class="btn" data-act="copy" data-id="${esc(p.id)}">Copiar texto</button>` : ""}
       <label class="check"><input type="checkbox" data-act="toggle" data-kind="ig" data-key="${esc(p.id)}"${p.done ? " checked" : ""}> Publicado</label>
       ${p.done ? "" : `<button type="button" class="btn" data-act="remind" data-kind="ig" data-key="${esc(p.id)}">🔔 Avisarme</button>`}
-      ${p.extra ? `<button type="button" class="btn ghost" data-act="del-post" data-id="${esc(p.id)}">Borrar</button>` : ""}
+      <button type="button" class="btn ghost" data-act="del-post" data-id="${esc(p.id)}">Borrar</button>
     </div>
   </article>`;
 }
@@ -255,6 +261,8 @@ function viewInsta() {
   return `<header class="hero"><p class="eyebrow">${esc(IG.account)}</p><h1>Instagram</h1>
       <p class="lead">2 reels y 1 carrusel por semana. Reels martes 20:00 y domingo 11:00; carruseles jueves 20:00. <b>${n} de ${posts.length}</b> publicados.</p></header>
     <details class="card"><summary>En cada publicación</summary><ul class="rules">${IG.rules.map(r => `<li>${r}</li>`).join("")}</ul></details>
+    ${(() => { const late = posts.filter(p => !p.done && p.date < today()).length;
+      return late ? `<div class="card late-card"><p><b>${plural(late, "publicación atrasada", "publicaciones atrasadas")}</b> sin publicar.</p><p class="muted small">Puedes pasarlas a otro día desde «Tu día» o borrarlas aquí, una a una o todas a la vez.</p><button type="button" class="btn danger small" data-act="del-late-posts">Borrar todas las atrasadas</button></div>` : ""; })()}
     <div class="filter" role="group" aria-label="Filtrar">${[["all", "Todo"], ["todo", "Pendientes"], ["reel", "Reels"], ["carr", "Carruseles"]].map(([k, v]) => `<button type="button" data-act="igfilter" data-f="${k}" aria-pressed="${igFilter === k}">${v}</button>`).join("")}</div>
     ${weeks.map(w => w.posts.length ? `<section><div class="week-h"><h2>${w.n}</h2><span>${fd(w.from)} – ${fd(w.to)}</span></div>
       <p class="stories"><b>Historias:</b> ${esc(w.stories)}</p><div class="list">${w.posts.map(postCard).join("")}</div></section>` : "").join("")}
@@ -333,6 +341,31 @@ function contactCard(c, t) {
   </details>`;
 }
 
+// Un paso de UNIXO: al tocarlo se abre para editarlo y añadir notas.
+function uxTask(p, t) {
+  const key = `${p.id}|${t.id}`;
+  return `<div class="item${t.done ? " done" : ""}" style="--c:var(--a-unixo)">
+    <input type="checkbox" aria-label="Hecho" data-act="toggle" data-kind="ux" data-key="${key}"${t.done ? " checked" : ""}>
+    <details class="ux-edit item-body" data-keep="ux-${t.id}">
+      <summary>
+        <span class="item-top">${t.date ? `<span class="item-date mono">${fd(t.date)}</span>` : `<span class="item-date">Sin fecha</span>`}<span class="item-title">${esc(t.text)}</span></span>
+        ${t.notes ? `<span class="item-sub ux-notes">${esc(t.notes)}</span>` : ""}
+        <span class="item-link">✏️ Editar o añadir información</span>
+      </summary>
+      <form data-form="uxedit" data-cid="${key}" class="form">
+        <label>Paso<textarea name="text" rows="2" required>${esc(t.text)}</textarea></label>
+        <div class="row">
+          <label>Fecha<input type="date" name="date" value="${esc(t.date)}"></label>
+          <label>Fase<select name="phase">${state.unixo.phases.map(ph => `<option value="${ph.id}"${ph.id === p.id ? " selected" : ""}>${esc(ph.name)}</option>`).join("")}</select></label>
+        </div>
+        <label>Información (precios, respuestas, contactos…)<textarea name="notes" rows="4">${esc(t.notes)}</textarea></label>
+        <div class="row"><button class="btn primary">Guardar</button><button type="button" class="btn danger" data-act="del-ux" data-key="${key}">Borrar paso</button></div>
+      </form>
+    </details>
+    ${t.done ? "" : bell("ux", key)}
+  </div>`;
+}
+
 function viewUnixo() {
   const all = state.unixo.phases.flatMap(p => p.tasks);
   const done = all.filter(t => t.done).length;
@@ -355,11 +388,7 @@ function viewUnixo() {
       const d = p.tasks.filter(t => t.done).length;
       return `<section class="phase">
         <div class="week-h"><input class="phase-name" data-act="uxphase-name" data-pid="${p.id}" value="${esc(p.name)}" aria-label="Nombre de la fase"><span>${d}/${p.tasks.length}</span></div>
-        <div class="list">${p.tasks.map(t => `<div class="item${t.done ? " done" : ""}" style="--c:var(--a-unixo)">
-          <input type="checkbox" aria-label="Hecho" data-act="toggle" data-kind="ux" data-key="${p.id}|${t.id}"${t.done ? " checked" : ""}>
-          <div class="item-body"><span class="item-title">${esc(t.text)}</span>
-            <input type="date" class="mini-date" data-act="uxdate" data-key="${p.id}|${t.id}" value="${esc(t.date)}" aria-label="Fecha"></div>
-          <button type="button" class="x" aria-label="Borrar" data-act="del-ux" data-key="${p.id}|${t.id}">×</button></div>`).join("")}</div>
+        <div class="list">${byDate(p.tasks).map(t => uxTask(p, t)).join("")}</div>
         <form data-form="uxtask" data-pid="${p.id}" class="row"><input name="text" required placeholder="Nuevo paso" aria-label="Nuevo paso"><input type="date" name="date" aria-label="Fecha"><button class="btn">Añadir</button></form>
         <button type="button" class="btn ghost small" data-act="del-phase" data-pid="${p.id}">Borrar fase</button>
       </section>`;
@@ -438,6 +467,14 @@ function findUx(key) {
   const [pid, tid] = key.split("|");
   const p = state.unixo.phases.find(x => x.id === pid);
   return { p, t: p && p.tasks.find(x => x.id === tid) };
+}
+
+// Las publicaciones del plan no se borran del código: se ocultan.
+function deletePost(id) {
+  if (state.igExtra.some(p => p.id === id)) state.igExtra = state.igExtra.filter(p => p.id !== id);
+  else (state.igHidden ||= {})[id] = true;
+  delete state.igDone[id];
+  if (state.igMove) delete state.igMove[id];
 }
 
 function moveTo(kind, key, date) {
@@ -519,13 +556,19 @@ document.addEventListener("click", e => {
   if (act === "photo-del") { if (confirm("¿Borrar esta captura?")) deletePhoto(el.dataset.id).then(render); return; }
   if (act === "igfilter") { igFilter = el.dataset.f; return render(); }
   if (act === "del-post" && confirm("¿Borrar esta publicación?")) {
-    state.igExtra = state.igExtra.filter(p => p.id !== el.dataset.id); delete state.igDone[el.dataset.id];
+    deletePost(el.dataset.id);
+  } else if (act === "del-late-posts") {
+    const late = igPosts().filter(p => !p.done && p.date < today());
+    if (!confirm(`¿Borrar ${plural(late.length, "publicación atrasada", "publicaciones atrasadas")} sin publicar?`)) return;
+    late.forEach(p => deletePost(p.id));
+  } else if (act === "del-task-late" && confirm("¿Borrar esta tarea?")) {
+    state.tasks = state.tasks.filter(t => t.id !== el.dataset.key);
   } else if (act === "del-fu") {
     const [cid, fid] = el.dataset.key.split("|"); const c = findContact(cid);
     c.followups = c.followups.filter(f => f.id !== fid);
   } else if (act === "del-contact" && confirm("¿Borrar este contacto y todo su historial?")) {
     state.contacts = state.contacts.filter(c => c.id !== el.dataset.cid); openContacts.delete(el.dataset.cid);
-  } else if (act === "del-ux") {
+  } else if (act === "del-ux" && confirm("¿Borrar este paso?")) {
     const { p, t } = findUx(el.dataset.key); if (p) p.tasks = p.tasks.filter(x => x !== t);
   } else if (act === "del-phase" && confirm("¿Borrar la fase y todos sus pasos?")) {
     state.unixo.phases = state.unixo.phases.filter(p => p.id !== el.dataset.pid);
@@ -543,6 +586,7 @@ document.addEventListener("submit", e => {
   e.preventDefault();
   const v = Object.fromEntries(new FormData(f).entries());
   for (const k in v) v[k] = String(v[k]).trim();
+  let closeAfter = "";
   if (kind === "quick") {
     if (!v.text) return;
     state.tasks.push({ id: uid(), text: v.text, date: v.date || "", time: v.date ? v.time || "" : "", area: v.area || "personal", done: false, created: today() });
@@ -560,11 +604,20 @@ document.addEventListener("submit", e => {
     Object.assign(findContact(f.dataset.cid), { name: v.name, company: v.company, phone: v.phone, email: v.email });
   } else if (kind === "uxtask") {
     state.unixo.phases.find(p => p.id === f.dataset.pid).tasks.push({ id: uid(), text: v.text, date: v.date || "", done: false });
+  } else if (kind === "uxedit") {
+    const { p, t } = findUx(f.dataset.cid);
+    if (t) {
+      Object.assign(t, { text: v.text, date: v.date || "", notes: v.notes });
+      const to = state.unixo.phases.find(x => x.id === v.phase);
+      if (to && to !== p) { p.tasks = p.tasks.filter(x => x !== t); to.tasks.push(t); }
+    }
+    closeAfter = `ux-${t ? t.id : ""}`;
   } else if (kind === "uxphase") {
     state.unixo.phases.push({ id: uid(), name: v.name, tasks: [] });
   }
   const d = readDrafts(); delete d[draftId(f)]; writeDrafts(d);
   save(); render();
+  if (closeAfter) document.querySelector(`details[data-keep="${closeAfter}"]`)?.removeAttribute("open");
   if (kind === "quick") document.getElementById("q-text")?.focus();
 });
 
