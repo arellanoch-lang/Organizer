@@ -124,6 +124,13 @@ dialog label { display: grid; gap: 4px; font-size: 14px; color: var(--muted); }
 .btn.upload { justify-self: start; display: inline-flex; }
 .photo-dlg { width: min(720px, calc(100% - 16px)); padding: 8px; }
 .photo-dlg img { width: 100%; height: auto; max-height: 85vh; object-fit: contain; border-radius: 8px; }
+.ux-edit > summary { list-style: none; cursor: pointer; display: grid; gap: 2px; }
+.ux-edit > summary::-webkit-details-marker { display: none; }
+.ux-edit[open] > summary .item-link { display: none; }
+.ux-edit .form { margin-top: 8px; }
+.ux-edit label { display: grid; gap: 4px; font-size: 13px; color: var(--muted); }
+.ux-notes { white-space: pre-wrap; }
+.late-card { border-left: 4px solid var(--late); display: grid; gap: 6px; }
 .item-link { font-size: 13px; text-decoration: none; }
 .tag { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--c); }
 .x { border: 0; background: none; color: var(--muted); font-size: 22px; line-height: 1; padding: 0 4px; cursor: pointer; }
