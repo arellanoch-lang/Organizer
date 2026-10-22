@@ -71,7 +71,8 @@ function agenda(from, to) {
   state.tasks.forEach(t => {
     if (inR(t.date)) out.push({ date: t.date, time: t.time || "", kind: "task", key: t.id, area: t.area, title: t.text, done: t.done });
   });
-  state.contacts.forEach(c => (c.followups || []).forEach(f => {
+  // Los clientes descartados o pasados ya no generan avisos de contacto.
+  state.contacts.filter(c => !CLOSED.includes(c.status)).forEach(c => (c.followups || []).forEach(f => {
     if (inR(f.date)) out.push({ date: f.date, kind: "fu", key: `${c.id}|${f.id}`, area: "freelance", title: `📞 Contactar a ${c.name}${c.company ? " (" + c.company + ")" : ""}`, sub: f.reason, done: f.done, link: "freelance" });
   }));
   state.unixo.phases.forEach(p => p.tasks.forEach(t => {
@@ -279,13 +280,26 @@ function viewInsta() {
 }
 
 const openContacts = new Set();
+// Filtro de la lista de clientes (se recuerda en este móvil).
+let clientFilter = "all";
+try { clientFilter = localStorage.getItem("organizer-client-filter") || "all"; } catch (e) { /* sin almacenamiento */ }
+const CLOSED = ["pasado", "descartado"];
+
 function viewFreelance() {
   const t = today();
-  const cs = [...state.contacts].sort((a, b) => {
+  const isDue = c => { const f = nextFollowup(c); return !CLOSED.includes(c.status) && !!f && f.date <= t; };
+  // Primero los que siguen en juego, por fecha del próximo contacto; los cerrados, al final.
+  const all = [...state.contacts].sort((a, b) => {
     const fa = nextFollowup(a), fb = nextFollowup(b);
-    return (fa ? fa.date : "9999") .localeCompare(fb ? fb.date : "9999") || a.name.localeCompare(b.name);
+    return Number(CLOSED.includes(a.status)) - Number(CLOSED.includes(b.status))
+      || (fa ? fa.date : "9999").localeCompare(fb ? fb.date : "9999") || a.name.localeCompare(b.name);
   });
-  const due = cs.filter(c => { const f = nextFollowup(c); return f && f.date <= t; }).length;
+  const due = all.filter(isDue).length;
+  const count = k => all.filter(c => c.status === k).length;
+  if (clientFilter !== "all" && clientFilter !== "due" && !count(clientFilter)) clientFilter = "all";
+  const cs = all.filter(c => clientFilter === "all" || (clientFilter === "due" ? isDue(c) : c.status === clientFilter));
+  const chips = [["all", "Todos", all.length, ""], ["due", "📞 Por contactar", due, ""],
+    ...Object.entries(STATUS).filter(([k]) => count(k)).map(([k, v]) => [k, v, count(k), k])];
   return `<header class="hero"><p class="eyebrow">Apps y webs</p><h1>Freelance</h1>
       <p class="lead">${plural(state.contacts.length, "contacto", "contactos")}${due ? ` · <b>${plural(due, "pendiente", "pendientes")} de contactar</b>` : ""}</p></header>
     <details class="card" data-keep="new-contact"${state.contacts.length ? "" : " open"}><summary>+ Nuevo contacto</summary>
@@ -298,18 +312,21 @@ function viewFreelance() {
         <label>Notas<textarea name="notes" rows="3"></textarea></label>
         <button class="btn primary">Guardar contacto</button>
       </form></details>
-    <div class="list">${cs.map(c => contactCard(c, t)).join("") || `<p class="empty">Aún no hay contactos.</p>`}</div>`;
+    ${all.length ? `<div class="filter" role="group" aria-label="Filtrar clientes">${chips.map(([k, label, n, st]) =>
+      `<button type="button" data-act="cfilter" data-f="${k}" aria-pressed="${clientFilter === k}"${st ? ` class="st" style="--st:var(--st-${st})"` : ""}>${label} <span class="n">${n}</span></button>`).join("")}</div>` : ""}
+    <div class="list">${cs.map(c => contactCard(c, t)).join("") || `<p class="empty">${all.length ? "Ningún contacto con este filtro." : "Aún no hay contactos."}</p>`}</div>`;
 }
 
 function contactCard(c, t) {
   const nf = nextFollowup(c);
   const fus = [...(c.followups || [])].sort((a, b) => Number(a.done) - Number(b.done) || a.date.localeCompare(b.date));
   const wa = c.phone ? c.phone.replace(/[^\d+]/g, "").replace(/^\+/, "") : "";
-  return `<details class="contact" data-cid="${c.id}"${openContacts.has(c.id) ? " open" : ""}>
+  return `<details class="contact st-${c.status}" style="--st:var(--st-${c.status})" data-cid="${c.id}"${openContacts.has(c.id) ? " open" : ""}>
     <summary>
       <div class="contact-h"><b>${esc(c.name)}</b><span class="pill st-${c.status}">${STATUS[c.status] || ""}</span></div>
       ${c.company ? `<div class="muted small">${esc(c.company)}</div>` : ""}
-      <div class="next${nf && nf.date < t ? " late" : nf && nf.date === t ? " today" : ""}">${nf ? `📞 ${fd(nf.date)} · ${esc(nf.reason)}` : "Sin próximo contacto"}</div>
+      ${CLOSED.includes(c.status) ? `<div class="next">${c.status === "descartado" ? "Descartado: no se le contactará" : "Cliente pasado: sin avisos"}</div>`
+        : `<div class="next${nf && nf.date < t ? " late" : nf && nf.date === t ? " today" : ""}">${nf ? `📞 ${fd(nf.date)} · ${esc(nf.reason)}` : "Sin próximo contacto"}</div>`}
     </summary>
     <div class="contact-body">
       <div class="links">${c.phone ? `<a class="btn" href="tel:${esc(c.phone)}">Llamar</a><a class="btn" href="https://wa.me/${esc(wa)}" target="_blank" rel="noopener">WhatsApp</a>` : ""}${c.email ? `<a class="btn" href="mailto:${esc(c.email)}">Email</a>` : ""}</div>
@@ -555,6 +572,11 @@ document.addEventListener("click", e => {
   if (act === "photo-open") { document.getElementById("photo-img").src = el.src; return document.getElementById("photo").showModal(); }
   if (act === "photo-del") { if (confirm("¿Borrar esta captura?")) deletePhoto(el.dataset.id).then(render); return; }
   if (act === "igfilter") { igFilter = el.dataset.f; return render(); }
+  if (act === "cfilter") {
+    clientFilter = el.dataset.f;
+    try { localStorage.setItem("organizer-client-filter", clientFilter); } catch (e) { /* sin almacenamiento */ }
+    return render();
+  }
   if (act === "del-post" && confirm("¿Borrar esta publicación?")) {
     deletePost(el.dataset.id);
   } else if (act === "del-late-posts") {
