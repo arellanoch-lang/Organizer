@@ -173,6 +173,15 @@ export const SEED_CONTACTS = [
     log: [{ date: "2026-09-23", text: "Boceto enviado. Por ahora no está interesada" }] },
 ];
 
+// Clientes añadidos después: se suman una sola vez a los datos del móvil
+// (si ya existen o los borraste, no se vuelven a añadir).
+export const EXTRA_CONTACTS = [
+  { id: "c-cavitbell", name: "Cavitbell", company: "Reservas online", phone: "", email: "", status: "propuesta",
+    notes: "Web: https://www.cavitbell.com/",
+    followups: [{ id: "f-cavitbell-1", date: "2026-10-30", reason: "Preguntar si han visto la propuesta", done: false }],
+    log: [{ date: "2026-10-23", text: "Propuesta enviada" }] },
+];
+
 // Plan de UNIXO montado a partir de los correos con proveedores (hasta el 8 oct).
 // Solo se carga si la sección UNIXO está vacía. Todo se puede editar en la app.
 export const UNIXO_SEED = {

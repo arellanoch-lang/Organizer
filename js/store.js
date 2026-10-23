@@ -1,4 +1,4 @@
-import { SEED_CONTACTS, UNIXO_SEED } from "./data.js";
+import { SEED_CONTACTS, UNIXO_SEED, EXTRA_CONTACTS } from "./data.js";
 
 // Todo se guarda en este dispositivo (localStorage). Usa «Copia de seguridad»
 // para pasar los datos a otro móvil o guardarlos fuera.
@@ -31,6 +31,13 @@ function load() {
   // El plan de UNIXO se carga una sola vez, y solo si la sección está vacía.
   if (!st.unixoSeeded && !st.unixo.phases.length && !st.unixo.summary) st.unixo = structuredClone(UNIXO_SEED);
   st.unixoSeeded = true;
+  // Clientes nuevos añadidos al código: entran una sola vez.
+  st.extraAdded ||= {};
+  for (const c of EXTRA_CONTACTS) {
+    if (st.extraAdded[c.id]) continue;
+    if (!st.contacts.some(x => x.id === c.id)) st.contacts.push(structuredClone(c));
+    st.extraAdded[c.id] = true;
+  }
   return st;
 }
 
