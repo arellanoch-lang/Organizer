@@ -180,6 +180,10 @@ export const EXTRA_CONTACTS = [
     notes: "Web: https://www.cavitbell.com/",
     followups: [{ id: "f-cavitbell-1", date: "2026-10-30", reason: "Preguntar si han visto la propuesta", done: false }],
     log: [{ date: "2026-10-23", text: "Propuesta enviada" }] },
+  { id: "c-hoyestetica", name: "Hoy Estética", company: "Reservas online", phone: "", email: "", status: "propuesta",
+    notes: "Contactada por WhatsApp.",
+    followups: [{ id: "f-hoyestetica-1", date: "2026-10-30", reason: "Preguntar si han visto la propuesta", done: false }],
+    log: [{ date: "2026-10-23", text: "Propuesta enviada por WhatsApp" }] },
 ];
 
 // Plan de UNIXO montado a partir de los correos con proveedores (hasta el 8 oct).
