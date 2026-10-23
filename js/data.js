@@ -188,6 +188,10 @@ export const EXTRA_CONTACTS = [
     notes: "Contactada por correo electrónico.",
     followups: [{ id: "f-chely-1", date: "2026-10-30", reason: "Preguntar si han visto la propuesta", done: false }],
     log: [{ date: "2026-10-23", text: "Propuesta enviada por correo electrónico" }] },
+  { id: "c-imagenvital", name: "Imagen Vital", company: "Reservas online", phone: "", email: "", status: "propuesta",
+    notes: "Contactada por WhatsApp y por correo electrónico.",
+    followups: [{ id: "f-imagenvital-1", date: "2026-10-30", reason: "Preguntar si han visto la propuesta", done: false }],
+    log: [{ date: "2026-10-23", text: "Propuesta enviada por WhatsApp y por correo electrónico" }] },
 ];
 
 // Plan de UNIXO montado a partir de los correos con proveedores (hasta el 8 oct).
