@@ -1,6 +1,6 @@
 // Guarda la app en el móvil para que abra al instante y funcione sin conexión.
 // Al cambiar cualquier archivo, sube la versión para que se actualice.
-const CACHE = "organizador-v11";
+const CACHE = "organizador-v12";
 const FILES = [
   "./", "index.html", "manifest.webmanifest", "css/styles.css",
   "js/app.js", "js/data.js", "js/store.js", "js/photos.js",
