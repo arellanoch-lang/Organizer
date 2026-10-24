@@ -80,6 +80,10 @@ export const IG = { account: "@lemondenais" };
 // Las fechas de seguimiento son propuestas: cámbialas desde la ficha.
 export const SEED_CONTACTS = [];
 
+// Clientes añadidos después: se suman una sola vez a los datos del móvil
+// (si ya existen o los borraste, no se vuelven a añadir).
+export const EXTRA_CONTACTS = [];
+
 // Plan de UNIXO montado a partir de los correos con proveedores (hasta el 8 oct).
 // Solo se carga si la sección UNIXO está vacía. Todo se puede editar en la app.
 export const UNIXO_SEED = {

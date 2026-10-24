@@ -1,4 +1,4 @@
-import { SEED_CONTACTS, UNIXO_SEED } from "./data.js";
+import { SEED_CONTACTS, UNIXO_SEED, EXTRA_CONTACTS } from "./data.js";
 
 // Todo se guarda en este dispositivo (localStorage). Usa «Copia de seguridad»
 // para pasar los datos a otro móvil o guardarlos fuera.
@@ -34,6 +34,13 @@ function load() {
   st.unixoSeeded = true;
   // Octubre 2026: se borra el calendario antiguo de Instagram (llega uno nuevo).
   if (!st.igReset1) Object.assign(st, { igExtra: [], igDone: {}, igMove: {}, igHidden: {}, igReset1: true });
+  // Clientes nuevos añadidos al código: entran una sola vez.
+  st.extraAdded ||= {};
+  for (const c of EXTRA_CONTACTS) {
+    if (st.extraAdded[c.id]) continue;
+    if (!st.contacts.some(x => x.id === c.id)) st.contacts.push(structuredClone(c));
+    st.extraAdded[c.id] = true;
+  }
   return st;
 }
 
