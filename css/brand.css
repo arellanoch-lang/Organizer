@@ -1,0 +1,56 @@
+/* Identidad de marca Christel Arellano: solo para la oferta en PDF. */
+@font-face { font-family: "Fraunces"; src: url("../brand/fonts/Fraunces-Medium.woff2") format("woff2"); font-weight: 500; font-display: swap; }
+@font-face { font-family: "Manrope"; src: url("../brand/fonts/Manrope-Regular.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Manrope"; src: url("../brand/fonts/Manrope-SemiBold.woff2") format("woff2"); font-weight: 600; font-display: swap; }
+@font-face { font-family: "Manrope"; src: url("../brand/fonts/Manrope-Bold.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+
+.offer {
+  --verde: #2f5d50; --terracota: #c4643a; --terracota-texto: #a24e2a; --tinta: #1c2826; --gris: #5f6b66;
+  --arena: #e8dfd0; --linea: #d6cfc2;
+  background: #fff; color: var(--tinta); font: 400 15px/23px Manrope, "Segoe UI", Arial, sans-serif;
+  padding: 32px 24px; border: 1px solid var(--linea); display: grid; gap: 16px; color-scheme: light;
+}
+.offer * { box-sizing: border-box; }
+.of-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
+.of-head img { height: 44px; width: auto; display: block; }
+.of-meta { text-align: right; }
+.of-tipo { font-size: 10.5px; line-height: 14px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--verde); }
+.of-dato, .of-small { font-size: 12px; line-height: 18px; color: var(--gris); }
+.of-filete { height: 1px; background: var(--linea); position: relative; margin-top: -4px; }
+.of-filete::before { content: ""; position: absolute; left: 0; top: -1px; height: 3px; width: 56px; background: var(--terracota); }
+.of-para { display: grid; gap: 2px; margin-top: 8px; }
+.of-para b { font-weight: 600; font-size: 16px; }
+.of-para span:last-child:not(.of-tipo) { color: var(--gris); }
+.of-title { font: 500 28px/34px Fraunces, Georgia, serif; letter-spacing: -.01em; margin: 8px 0 0; color: var(--tinta); text-wrap: balance; }
+.of-punto { display: inline-block; width: 8px; height: 8px; border-radius: 999px; background: var(--terracota); margin-left: 4px; vertical-align: baseline; }
+.of-desc { white-space: pre-wrap; margin: 0; }
+.of-h2 { font: 500 20px/26px Fraunces, Georgia, serif; margin: 8px 0 0; color: var(--tinta); }
+.of-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+.of-table th { background: var(--arena); text-align: left; font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; font-weight: 600; padding: 8px 12px; }
+.of-table th:last-child, .of-table td:last-child { text-align: right; white-space: nowrap; }
+.of-table td { padding: 10px 12px; border-bottom: 1px solid var(--linea); vertical-align: top; font-variant-numeric: tabular-nums; }
+.of-totals { display: grid; gap: 4px; justify-items: end; }
+.of-totals > div { display: flex; gap: 24px; justify-content: space-between; min-width: 240px; font-variant-numeric: tabular-nums; }
+.of-total { border-top: 2px solid var(--verde); padding-top: 8px; margin-top: 4px; align-items: baseline; }
+.of-total span { font-weight: 600; }
+.of-total b { font-size: 28px; line-height: 32px; font-weight: 600; color: var(--terracota-texto); }
+.of-cond { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 14px; line-height: 21px; }
+.of-firma { margin-top: 16px; display: flex; justify-content: flex-end; }
+.of-firma > div { display: grid; gap: 6px; width: 240px; }
+.of-linea { height: 48px; border-bottom: 1px solid var(--tinta); }
+.of-pie { border-top: 1px solid var(--linea); padding-top: 16px; margin-top: 8px; display: flex; gap: 16px; align-items: center; font-size: 12px; line-height: 18px; color: var(--gris); }
+.of-pie img { width: 24px; height: 24px; display: block; flex: none; }
+.of-pie > div { display: flex; flex-wrap: wrap; column-gap: 16px; }
+.of-pie strong { color: var(--tinta); font-weight: 600; }
+
+/* Al imprimir (Guardar como PDF) solo sale la oferta, en A4. */
+@page { size: A4; margin: 16mm 18mm; }
+@media print {
+  body { background: #fff !important; padding: 0 !important; }
+  body * { visibility: hidden; }
+  #offer-doc, #offer-doc * { visibility: visible; }
+  #offer-doc { position: absolute; left: 0; top: 0; width: 100%; border: 0; padding: 0; gap: 18px; }
+  .topbar, .tabs, .fab, .no-print { display: none !important; }
+  .of-head img { height: 52px; }
+  .of-table tr, .of-totals, .of-firma, .of-pie { break-inside: avoid; }
+}

@@ -416,8 +416,9 @@ const isDue = (c, t) => { const f = nextFollowup(c); return !CLOSED.includes(c.s
 function viewFreelance() {
   const id = route()[1];
   if (id === "new") return viewNewContact();
+  if (id === "plantillas") return viewTemplates();
   const one = id && findContact(id);
-  if (one) return viewContact(one);
+  if (one) return route()[2] === "oferta" ? viewOffer(one) : viewContact(one);
 
   const t = today();
   const all = [...state.contacts].sort((a, b) => {
@@ -433,7 +434,7 @@ function viewFreelance() {
   const chips = [["all", "Todos", all.length, ""], ["due", "📞 Por contactar", due, ""],
     ...PIPE.filter(k => count(k)).map(k => [k, STATUS[k], count(k), k])];
 
-  return `<header class="hero"><p class="eyebrow">Freelance · apps y webs</p><h1>Clientes</h1></header>
+  return `<header class="hero hero-row"><div><p class="eyebrow">Freelance · apps y webs</p><h1>Clientes</h1></div><a class="btn small" href="#freelance:plantillas">✉️ Plantillas y oferta</a></header>
     ${tiles([
       ["Por contactar", due, due ? "hoy o atrasados" : "todo al día"],
       ["En juego", count("lead") + count("propuesta"), "posibles y propuestas"],
@@ -476,6 +477,7 @@ function viewNewContact() {
     <form data-form="contact" class="card form">
       <label>Nombre *<input name="name" required autocomplete="off"></label>
       <label>Empresa o proyecto<input name="company" autocomplete="off"></label>
+      <label>Persona de contacto<input name="person" autocomplete="off" placeholder="Con quién hablas (para saludar en los mensajes)"></label>
       <div class="row"><label>Teléfono<input name="phone" type="tel"></label><label>Email<input name="email" type="email"></label></div>
       <div class="row"><label>Servicio<select name="service">${options(SERVICES)}</select></label><label>Presupuesto (€)<input name="value" inputmode="decimal" placeholder="1.200"></label></div>
       <div class="row"><label>Origen<select name="source">${options(SOURCES)}</select></label><label>Estado<select name="status">${PIPE.map(k => `<option value="${k}">${STATUS[k]}</option>`).join("")}</select></label></div>
@@ -529,6 +531,8 @@ function viewContact(c) {
       </form>`}
     </section>
 
+    ${messagesSection(c)}
+
     <section><h2>Actividad</h2>
       <form data-form="log" ${f} class="card form log-form">
         <div class="types" role="radiogroup" aria-label="Tipo">${Object.entries(ACT).map(([k, v], i) => `<label class="type"><input type="radio" name="type" value="${k}"${i === 0 ? " checked" : ""}><span>${v}</span></label>`).join("")}</div>
@@ -553,11 +557,155 @@ function viewContact(c) {
       <div class="form">
         <label>Nombre<input data-act="cfield" data-f="name" ${f} value="${esc(c.name)}"></label>
         <label>Empresa o proyecto<input data-act="cfield" data-f="company" ${f} value="${esc(c.company)}"></label>
+        <label>Persona de contacto<input data-act="cfield" data-f="person" ${f} value="${esc(c.person)}" placeholder="Con quién hablas"></label>
         <div class="row"><label>Teléfono<input type="tel" data-act="cfield" data-f="phone" ${f} value="${esc(c.phone)}"></label><label>Email<input type="email" data-act="cfield" data-f="email" ${f} value="${esc(c.email)}"></label></div>
       </div>
       <button type="button" class="btn danger small del-c" data-act="del-contact" ${f}>Borrar cliente</button>
     </section>`;
 }
+
+/* ---------- Mensajes tipo y oferta ---------- */
+const VARS = ["nombre", "empresa", "servicio", "precio", "enlace", "fecha", "mi_nombre"];
+let openTpl = null; // { cid, tid } del mensaje abierto en la ficha
+let keepTpl = false; // para abrir un mensaje justo al llegar a la ficha
+
+function fillTemplate(text, c) {
+  const vars = {
+    nombre: c.person || c.name, empresa: c.name,
+    servicio: c.service ? c.service.toLowerCase() : "[servicio]",
+    precio: euros(c.value) ? money(euros(c.value)) : "[precio]",
+    enlace: c.link || "[enlace a la propuesta]",
+    fecha: longFmt.format(new Date()).replace(/^\w+, /, ""),
+    mi_nombre: state.profile.name || "",
+  };
+  return String(text || "").replace(/\{(\w+)\}/g, (m, k) => (k in vars ? vars[k] : m));
+}
+
+const waLink = (phone, text) => `https://wa.me/${(phone || "").replace(/[^\d]/g, "")}?text=${encodeURIComponent(text)}`;
+const mailLink = (to, subject, body) => `mailto:${encodeURIComponent(to || "")}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+function messagesSection(c) {
+  const open = openTpl && openTpl.cid === c.id && state.templates.find(t => t.id === openTpl.tid);
+  return `<section class="card msgs"><h2>Mensajes</h2>
+    <p class="hint">Elige un mensaje: se rellena con los datos de ${esc(c.person || c.name)}. Puedes retocarlo antes de enviarlo.</p>
+    <div class="tpl-btns">${state.templates.map(t => `<button type="button" class="btn small" data-act="tpl-open" data-cid="${c.id}" data-tid="${t.id}" aria-pressed="${open && open.id === t.id}">${esc(t.name)}</button>`).join("")}</div>
+    ${open ? `<div class="tpl-box">
+      <textarea id="tpl-text" rows="9" aria-label="Mensaje">${esc(fillTemplate(open.text, c))}</textarea>
+      ${/\[[^\]]+\]/.test(fillTemplate(open.text, c)) ? `<p class="warn small">Falta algún dato [entre corchetes]: complétalo aquí o en «Proyecto».</p>` : ""}
+      <div class="row tpl-actions">
+        <button type="button" class="btn" data-act="tpl-send" data-via="copy" data-cid="${c.id}">Copiar</button>
+        <button type="button" class="btn" data-act="tpl-send" data-via="whatsapp" data-cid="${c.id}">💬 WhatsApp</button>
+        <button type="button" class="btn" data-act="tpl-send" data-via="email" data-cid="${c.id}">✉️ Email</button>
+      </div>
+      ${open.id === "oferta" ? `<p class="hint">Primero prepara el PDF de la oferta y luego envía este mensaje adjuntándolo.</p>` : ""}
+    </div>` : ""}
+    <a class="btn offer-btn" href="#freelance:${c.id}:oferta">📄 Preparar oferta final (PDF)</a>
+  </section>`;
+}
+
+function viewTemplates() {
+  const p = state.profile;
+  const pf = (k, label, type = "text", ph = "") => `<label>${label}<input type="${type}" data-act="pfield" data-f="${k}" value="${esc(p[k])}" placeholder="${esc(ph)}"></label>`;
+  return `<a class="back" href="#freelance">‹ Clientes</a>
+    <header class="hero"><p class="eyebrow">Clientes</p><h1>Plantillas y oferta</h1>
+      <p class="lead">Escribe aquí tus mensajes de siempre. En la ficha de cada cliente se rellenan solos.</p></header>
+    <div class="card vars"><p class="small"><b>Datos que se rellenan solos</b> (escríbelos tal cual, con llaves):</p>
+      <div class="chips">${VARS.map(v => `<code>{${v}}</code>`).join("")}</div>
+      <p class="hint">{nombre} es la persona de contacto (o el nombre del cliente si no la has puesto); {empresa} es el nombre del cliente. {precio} y {enlace} salen de «Proyecto».</p></div>
+    ${state.templates.map((t, i) => `<section class="card tpl-edit">
+      <label>Nombre del mensaje<input data-act="tfield" data-i="${i}" data-f="name" value="${esc(t.name)}"></label>
+      <label>Asunto (para email)<input data-act="tfield" data-i="${i}" data-f="subject" value="${esc(t.subject)}"></label>
+      <label>Texto<textarea data-act="tfield" data-i="${i}" data-f="text" rows="9">${esc(t.text)}</textarea></label>
+      <button type="button" class="btn ghost small" data-act="tpl-del" data-i="${i}">Borrar mensaje</button>
+    </section>`).join("")}
+    <button type="button" class="btn" data-act="tpl-add">+ Añadir mensaje</button>
+    <section class="card"><h2>Mis datos en la oferta</h2>
+      <p class="hint">Salen en el pie del PDF. Se guarda solo.</p>
+      <div class="form">
+        ${pf("name", "Nombre")}
+        <div class="row">${pf("email", "Email", "email", "tu@email.com")}${pf("phone", "Teléfono", "tel", "+34 …")}</div>
+        <div class="row">${pf("city", "Ciudad", "text", "Corella, Navarra")}${pf("nif", "NIF (opcional)")}</div>
+        ${pf("web", "Web (opcional)", "text", "www.…")}
+      </div></section>
+    <section class="card"><h2>Condiciones por defecto</h2>
+      <p class="hint">Una por línea. Cada oferta nueva empieza con estas, y en cada una las puedes cambiar.</p>
+      <textarea data-act="ocond-default" rows="7">${esc(state.offerCond)}</textarea></section>`;
+}
+
+// Oferta final de un cliente: se crea la primera vez que la abres.
+function offerOf(c) {
+  if (!c.offer) {
+    state.offerSeq = (state.offerSeq || 0) + 1;
+    c.offer = {
+      num: `${new Date().getFullYear()}-${String(state.offerSeq).padStart(3, "0")}`,
+      date: today(), valid: "30",
+      title: c.service ? `${c.service} para ${c.name}` : `Propuesta para ${c.name}`,
+      desc: "", lines: [{ text: c.service || "Desarrollo del proyecto", price: c.value || "" }],
+      vat: "no", cond: state.offerCond,
+    };
+    save();
+  }
+  return c.offer;
+}
+
+const money2 = n => new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR", minimumFractionDigits: 0, maximumFractionDigits: 2, useGrouping: "always" }).format(n || 0);
+const dmy = d => d ? d.split("-").reverse().join("/") : "";
+
+function offerDoc(c) {
+  const o = offerOf(c), me = state.profile;
+  const lines = o.lines.filter(l => l.text || l.price);
+  const sub = lines.reduce((a, l) => a + euros(l.price), 0);
+  const vat = o.vat === "21" ? sub * 0.21 : 0;
+  const total = sub + vat;
+  const cond = String(o.cond || "").split("\n").map(x => x.replace(/^[\s•\-–]+/, "").trim()).filter(Boolean);
+  const contact = [me.email, me.phone, me.city, me.web, me.nif && "NIF " + me.nif].filter(Boolean);
+  return `<header class="of-head"><img src="brand/logo-horizontal.svg" alt="${esc(me.name || "Christel Arellano")}">
+      <div class="of-meta"><div class="of-tipo">Oferta nº ${esc(o.num)}</div><div class="of-dato">Fecha: ${esc(dmy(o.date))} · Validez: ${esc(o.valid)} días</div></div></header>
+    <div class="of-filete"></div>
+    <div class="of-para"><span class="of-tipo">Para</span><b>${esc(c.name)}</b>${c.person ? `<span>${esc(c.person)}</span>` : ""}</div>
+    <h1 class="of-title">${esc(o.title)}<span class="of-punto"></span></h1>
+    ${o.desc ? `<p class="of-desc">${esc(o.desc)}</p>` : ""}
+    <table class="of-table"><thead><tr><th>Concepto</th><th>Importe</th></tr></thead>
+      <tbody>${lines.map(l => `<tr><td>${esc(l.text)}</td><td>${euros(l.price) ? money2(euros(l.price)) : ""}</td></tr>`).join("") || `<tr><td colspan="2">Añade los conceptos</td></tr>`}</tbody></table>
+    <div class="of-totals">
+      ${o.vat === "21" ? `<div><span>Base imponible</span><span>${money2(sub)}</span></div><div><span>IVA (21 %)</span><span>${money2(vat)}</span></div>` : ""}
+      <div class="of-total"><span>Total · pago único</span><b>${money2(total)}</b></div>
+      ${o.vat === "no" ? `<p class="of-small">IVA no incluido.</p>` : o.vat === "inc" ? `<p class="of-small">IVA incluido.</p>` : ""}
+    </div>
+    ${cond.length ? `<h2 class="of-h2">Condiciones</h2><ul class="of-cond">${cond.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
+    <div class="of-firma"><div><span class="of-tipo">Aceptación del cliente</span><span class="of-linea"></span><span class="of-small">Nombre, fecha y firma</span></div></div>
+    <footer class="of-pie"><img src="brand/simbolo.svg" alt=""><div><strong>${esc(me.name || "")}</strong>${contact.map(x => `<span>${esc(x)}</span>`).join("")}</div></footer>`;
+}
+
+function viewOffer(c) {
+  const o = offerOf(c);
+  const of = (k, label, attrs = "") => `<label>${label}<input data-act="ofield" data-cid="${c.id}" data-f="${k}" value="${esc(o[k])}" ${attrs}></label>`;
+  return `<a class="back no-print" href="#freelance:${c.id}">‹ ${esc(c.name)}</a>
+    <header class="hero no-print"><p class="eyebrow">Oferta final</p><h1>${esc(c.name)}</h1>
+      <p class="lead">Cambia lo que necesites: la vista previa de abajo se actualiza sola. Luego pulsa «Descargar PDF».</p></header>
+    <section class="card no-print offer-form">
+      <div class="row">${of("num", "Nº de oferta")}${of("date", "Fecha", 'type="date"')}${of("valid", "Validez (días)", 'inputmode="numeric"')}</div>
+      ${of("title", "Título")}
+      <label>Descripción breve (opcional)<textarea data-act="ofield" data-cid="${c.id}" data-f="desc" rows="3" placeholder="Qué incluye y qué gana el negocio, en dos o tres frases.">${esc(o.desc)}</textarea></label>
+      <h3>Conceptos</h3>
+      <div class="ol-list">${o.lines.map((l, i) => `<div class="ol-row">
+        <input data-act="oline" data-cid="${c.id}" data-i="${i}" data-f="text" value="${esc(l.text)}" placeholder="Concepto" aria-label="Concepto">
+        <input data-act="oline" data-cid="${c.id}" data-i="${i}" data-f="price" value="${esc(l.price)}" placeholder="0 €" inputmode="decimal" aria-label="Importe">
+        <button type="button" class="x" aria-label="Quitar" data-act="ol-del" data-cid="${c.id}" data-i="${i}">×</button></div>`).join("")}</div>
+      <button type="button" class="btn small" data-act="ol-add" data-cid="${c.id}">+ Añadir concepto</button>
+      <label>IVA<select data-act="ofield" data-cid="${c.id}" data-f="vat">
+        ${[["no", "Precio sin IVA (poner «IVA no incluido»)"], ["21", "Desglosar IVA 21 %"], ["inc", "Precio con IVA incluido"]].map(([k, v]) => `<option value="${k}"${o.vat === k ? " selected" : ""}>${v}</option>`).join("")}</select></label>
+      <label>Condiciones (una por línea)<textarea data-act="ofield" data-cid="${c.id}" data-f="cond" rows="6">${esc(o.cond)}</textarea></label>
+      ${/\[[^\]]+\]/.test(o.cond + o.title + o.desc) ? `<p class="warn small">Hay datos [entre corchetes] por completar.</p>` : ""}
+      <div class="row"><button type="button" class="btn primary" data-act="of-print">📄 Descargar PDF</button>
+        <button type="button" class="btn" data-act="of-msg" data-cid="${c.id}">✉️ Mensaje para enviarla</button></div>
+      <p class="hint">En el móvil se abre «Imprimir»: elige <b>Guardar como PDF</b> y luego adjúntalo en WhatsApp o en el email.</p>
+    </section>
+    <p class="eyebrow no-print">Vista previa</p>
+    <article id="offer-doc" class="offer">${offerDoc(c)}</article>`;
+}
+
+const refreshOffer = c => { const d = document.getElementById("offer-doc"); if (d) d.innerHTML = offerDoc(c); };
 
 /* ---------- UNIXO ---------- */
 // Un paso de UNIXO: al tocarlo se abre para editarlo y añadir notas.
@@ -654,6 +802,22 @@ function saveDraft(f) {
 
 document.addEventListener("input", e => {
   if (e.target.id === "c-search") { clientQuery = e.target.value; return applySearch(); }
+  const el = e.target, act = el.dataset.act;
+  if (act === "tfield") { state.templates[+el.dataset.i][el.dataset.f] = el.value; return save(); }
+  if (act === "pfield") { state.profile[el.dataset.f] = el.value.trim(); return save(); }
+  if (act === "ocond-default") { state.offerCond = el.value; return save(); }
+  if (act === "ofield" || act === "oline") {
+    const c = findContact(el.dataset.cid), o = c && offerOf(c);
+    if (!o) return;
+    if (act === "ofield") o[el.dataset.f] = el.value;
+    else {
+      o.lines[+el.dataset.i][el.dataset.f] = el.value;
+      // El total de la oferta pasa a ser el presupuesto del cliente.
+      const sub = o.lines.reduce((a, l) => a + euros(l.price), 0);
+      if (sub) c.value = String(sub);
+    }
+    save(); return refreshOffer(c);
+  }
   const f = e.target.closest("form[data-form]");
   if (f && e.target.name) saveDraft(f);
 });
@@ -758,6 +922,24 @@ function toggle(kind, key, on) {
   save(); render();
 }
 
+// Enviar un mensaje tipo: copiar, abrir WhatsApp o el email, y apuntarlo en la actividad.
+function sendTemplate(btn) {
+  const c = findContact(btn.dataset.cid), t = openTpl && state.templates.find(x => x.id === openTpl.tid);
+  const text = document.getElementById("tpl-text")?.value || "";
+  if (!c || !t) return;
+  const via = btn.dataset.via;
+  if (via === "copy") {
+    const ok = () => { btn.textContent = "Copiado ✓"; setTimeout(() => (btn.textContent = "Copiar"), 1600); };
+    try { navigator.clipboard.writeText(text).then(ok, () => document.getElementById("tpl-text").select()); } catch (e) { document.getElementById("tpl-text").select(); }
+    return;
+  }
+  if (via === "whatsapp") window.open(waLink(c.phone, text), "_blank", "noopener");
+  else location.href = mailLink(c.email, fillTemplate(t.subject, c), text);
+  (c.log ||= []).unshift({ date: today(), type: via, text: "Enviado: " + t.name });
+  openTpl = null;
+  save(); render();
+}
+
 function copyCaption(id, btn) {
   const p = igPosts().find(x => x.id === id);
   if (!p) return;
@@ -819,6 +1001,16 @@ document.addEventListener("click", e => {
     try { localStorage.setItem("organizer-client-filter", clientFilter); } catch (e) { /* sin almacenamiento */ }
     return render();
   }
+  if (act === "tpl-open") {
+    const same = openTpl && openTpl.cid === el.dataset.cid && openTpl.tid === el.dataset.tid;
+    openTpl = same ? null : { cid: el.dataset.cid, tid: el.dataset.tid };
+    render();
+    if (!same) document.getElementById("tpl-text")?.scrollIntoView({ block: "center" });
+    return;
+  }
+  if (act === "tpl-send") return sendTemplate(el);
+  if (act === "of-print") return window.print();
+  if (act === "of-msg") { openTpl = { cid: el.dataset.cid, tid: "oferta" }; keepTpl = true; location.hash = "freelance:" + el.dataset.cid; return; }
   if (act === "add-go") {
     addDlg.close();
     pendingFocus = el.dataset.focus || "";
@@ -855,6 +1047,17 @@ document.addEventListener("click", e => {
   } else if (act === "del-contact" && confirm("¿Borrar este cliente y todo su historial?")) {
     state.contacts = state.contacts.filter(c => c.id !== el.dataset.cid);
     save(); location.hash = "freelance"; return;
+  } else if (act === "tpl-add") {
+    state.templates.push({ id: uid(), name: "Nuevo mensaje", subject: "", text: "Hola {nombre}:\n\n\n\nUn saludo,\n{mi_nombre}" });
+  } else if (act === "tpl-del") {
+    if (!confirm("¿Borrar este mensaje tipo?")) return;
+    state.templates.splice(+el.dataset.i, 1);
+  } else if (act === "ol-add") {
+    offerOf(findContact(el.dataset.cid)).lines.push({ text: "", price: "" });
+  } else if (act === "ol-del") {
+    const o = offerOf(findContact(el.dataset.cid));
+    o.lines.splice(+el.dataset.i, 1);
+    if (!o.lines.length) o.lines.push({ text: "", price: "" });
   } else if (act === "del-ux" && confirm("¿Borrar este paso?")) {
     const { p, t } = findUx(el.dataset.key); if (p) p.tasks = p.tasks.filter(x => x !== t);
   } else if (act === "del-phase" && confirm("¿Borrar la fase y todos sus pasos?")) {
@@ -880,7 +1083,7 @@ document.addEventListener("submit", e => {
   } else if (kind === "post") {
     state.igExtra.push({ id: "x" + uid(), date: v.date, time: v.time, f: v.f, title: v.title, cap: v.cap, need: v.need });
   } else if (kind === "contact") {
-    const c = { id: uid(), name: v.name, company: v.company, phone: v.phone, email: v.email, status: v.status || "lead",
+    const c = { id: uid(), name: v.name, company: v.company, person: v.person, phone: v.phone, email: v.email, status: v.status || "lead",
       service: v.service, value: v.value, source: v.source, link: "", notes: v.notes, followups: [], log: [{ date: today(), type: "note", text: "Cliente creado" }] };
     if (v.date) c.followups.push({ id: uid(), date: v.date, reason: v.reason || "Contactar", done: false });
     state.contacts.push(c);
@@ -1010,6 +1213,8 @@ document.getElementById("import").addEventListener("change", async e => {
 
 /* ---------- arranque ---------- */
 window.addEventListener("hashchange", () => {
+  if (!keepTpl) openTpl = null; // al cambiar de pantalla se cierra el mensaje abierto
+  keepTpl = false;
   render();
   const focus = route()[0] === "correr" && route()[1] && document.querySelector(`details[data-keep="run-${CSS.escape(route()[1])}"]`);
   if (focus) { focus.open = true; focus.closest(".item").scrollIntoView({ block: "center" }); }

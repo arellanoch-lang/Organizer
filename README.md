@@ -8,7 +8,7 @@ App personal (PWA) para saber cada día qué toca. Se instala en la pantalla de 
 - **Repaso semanal** (desde «Mi día»): qué se hizo, qué quedó pendiente (pasarlo todo de golpe), cómo viene la semana siguiente y notas del repaso.
 - **10K**: plan para la Saucony 10K de París (6 dic 2026) con progreso (km por semana, ritmo medio, sensaciones), «Cómo fue» con capturas del reloj en cada entreno, calentamiento en los rodajes suaves y hybrid martes y jueves a las 19:00.
 - **Insta**: calendario de publicaciones (vacío a la espera del nuevo) con textos para copiar.
-- **Clientes**: CRM del freelance de apps y webs. Cifras (por contactar, en juego, en propuestas, ganado), búsqueda, filtros por estado y ficha de cada cliente con próxima acción, actividad (llamada, WhatsApp, email, reunión, nota), proyecto (servicio, presupuesto, origen, enlace a la propuesta) y datos de contacto.
+- **Clientes**: CRM del freelance de apps y webs. Cifras (por contactar, en juego, en propuestas, ganado), búsqueda, filtros por estado y ficha de cada cliente con próxima acción, actividad (llamada, WhatsApp, email, reunión, nota), proyecto (servicio, presupuesto, origen, enlace a la propuesta) y datos de contacto. **Mensajes tipo** (envío de propuesta, seguimiento, oferta final) que se rellenan solos y se envían por WhatsApp o email, y **oferta final en PDF** con la identidad de marca (logo, Fraunces/Manrope, colores), editable por cliente.
 - **UNIXO**: plan de las sudaderas por fases y pasos, ordenados por fecha, con el siguiente paso siempre visible.
 - **Ideas**: bandeja de ideas sin fecha y tareas programadas.
 - **Botón +**: añade una tarea o idea, un cliente, un paso de UNIXO o una publicación desde cualquier pantalla.
