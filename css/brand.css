@@ -1,56 +1,54 @@
-/* Identidad de marca Christel Arellano: solo para la oferta en PDF. */
-@font-face { font-family: "Fraunces"; src: url("../brand/fonts/Fraunces-Medium.woff2") format("woff2"); font-weight: 500; font-display: swap; }
-@font-face { font-family: "Manrope"; src: url("../brand/fonts/Manrope-Regular.woff2") format("woff2"); font-weight: 400; font-display: swap; }
-@font-face { font-family: "Manrope"; src: url("../brand/fonts/Manrope-SemiBold.woff2") format("woff2"); font-weight: 600; font-display: swap; }
-@font-face { font-family: "Manrope"; src: url("../brand/fonts/Manrope-Bold.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+/* Identidad de Christel Arellano (Web · Apps · Procesos), sacada de sus presupuestos.
+   Solo se usa en el presupuesto en PDF. */
+@font-face { font-family: "Jost"; src: url("../brand/fonts/Jost.woff2") format("woff2"); font-weight: 300 700; font-display: swap; }
+@font-face { font-family: "Manrope"; src: url("../brand/fonts/Manrope.woff2") format("woff2"); font-weight: 200 800; font-display: swap; }
 
 .offer {
-  --verde: #2f5d50; --terracota: #c4643a; --terracota-texto: #a24e2a; --tinta: #1c2826; --gris: #5f6b66;
-  --arena: #e8dfd0; --linea: #d6cfc2;
-  background: #fff; color: var(--tinta); font: 400 15px/23px Manrope, "Segoe UI", Arial, sans-serif;
-  padding: 32px 24px; border: 1px solid var(--linea); display: grid; gap: 16px; color-scheme: light;
+  --papel: #f7f5f0; --arena: #ebe6de; --tinta: #2c302d; --verde: #5c665e; --salvia: #a7b5aa; --linea: #d9d3c8; --gris: #6b716c;
+  background: var(--papel); color: var(--tinta); font: 400 14px/22px Manrope, "Segoe UI", Arial, sans-serif;
+  padding: 32px 26px; display: grid; gap: 14px; color-scheme: light; border: 1px solid var(--linea);
 }
 .offer * { box-sizing: border-box; }
-.of-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
-.of-head img { height: 44px; width: auto; display: block; }
-.of-meta { text-align: right; }
-.of-tipo { font-size: 10.5px; line-height: 14px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--verde); }
-.of-dato, .of-small { font-size: 12px; line-height: 18px; color: var(--gris); }
-.of-filete { height: 1px; background: var(--linea); position: relative; margin-top: -4px; }
-.of-filete::before { content: ""; position: absolute; left: 0; top: -1px; height: 3px; width: 56px; background: var(--terracota); }
-.of-para { display: grid; gap: 2px; margin-top: 8px; }
-.of-para b { font-weight: 600; font-size: 16px; }
-.of-para span:last-child:not(.of-tipo) { color: var(--gris); }
-.of-title { font: 500 28px/34px Fraunces, Georgia, serif; letter-spacing: -.01em; margin: 8px 0 0; color: var(--tinta); text-wrap: balance; }
-.of-punto { display: inline-block; width: 8px; height: 8px; border-radius: 999px; background: var(--terracota); margin-left: 4px; vertical-align: baseline; }
-.of-desc { white-space: pre-wrap; margin: 0; }
-.of-h2 { font: 500 20px/26px Fraunces, Georgia, serif; margin: 8px 0 0; color: var(--tinta); }
-.of-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
-.of-table th { background: var(--arena); text-align: left; font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; font-weight: 600; padding: 8px 12px; }
-.of-table th:last-child, .of-table td:last-child { text-align: right; white-space: nowrap; }
-.of-table td { padding: 10px 12px; border-bottom: 1px solid var(--linea); vertical-align: top; font-variant-numeric: tabular-nums; }
-.of-totals { display: grid; gap: 4px; justify-items: end; }
-.of-totals > div { display: flex; gap: 24px; justify-content: space-between; min-width: 240px; font-variant-numeric: tabular-nums; }
-.of-total { border-top: 2px solid var(--verde); padding-top: 8px; margin-top: 4px; align-items: baseline; }
-.of-total span { font-weight: 600; }
-.of-total b { font-size: 28px; line-height: 32px; font-weight: 600; color: var(--terracota-texto); }
-.of-cond { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 14px; line-height: 21px; }
-.of-firma { margin-top: 16px; display: flex; justify-content: flex-end; }
-.of-firma > div { display: grid; gap: 6px; width: 240px; }
-.of-linea { height: 48px; border-bottom: 1px solid var(--tinta); }
-.of-pie { border-top: 1px solid var(--linea); padding-top: 16px; margin-top: 8px; display: flex; gap: 16px; align-items: center; font-size: 12px; line-height: 18px; color: var(--gris); }
-.of-pie img { width: 24px; height: 24px; display: block; flex: none; }
-.of-pie > div { display: flex; flex-wrap: wrap; column-gap: 16px; }
-.of-pie strong { color: var(--tinta); font-weight: 600; }
+.offer p { margin: 0; }
+.of-head { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
+.of-logo { display: flex; align-items: center; gap: 2px; color: var(--verde); }
+.of-logo img { width: 46px; height: 46px; display: block; margin-right: -8px; }
+.of-logo > span { display: grid; font: 300 13px/17px Manrope, Arial, sans-serif; text-transform: uppercase; letter-spacing: .01em; }
+.of-logo b { font-weight: 400; color: var(--tinta); }
+.of-meta { display: grid; text-align: right; font: 400 11px/16px Jost, Arial, sans-serif; text-transform: uppercase; letter-spacing: .06em; color: var(--verde); }
+.of-eyebrow { font: 400 12px/16px Jost, Arial, sans-serif; text-transform: uppercase; letter-spacing: .06em; color: var(--verde); margin-top: 10px !important; }
+.of-title { font: 400 32px/38px Jost, Arial, sans-serif; color: var(--tinta); margin: 0; letter-spacing: -.005em; text-wrap: balance; }
+.of-desc { font: 400 16px/26px Jost, Arial, sans-serif; color: var(--verde); white-space: pre-wrap; }
+.of-rule { display: block; width: 40px; height: 2px; background: var(--tinta); margin: 4px 0 6px; }
+.of-table { width: 100%; border-collapse: collapse; background: var(--arena); border-radius: 10px; overflow: hidden; }
+.of-table td { padding: 10px 14px; border-bottom: 1px solid var(--papel); vertical-align: top; }
+.of-table tr:last-child td { border-bottom: 0; }
+.of-table td:last-child { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.of-price { display: grid; grid-template-columns: 1fr minmax(0, 220px); gap: 18px; align-items: start; }
+@media (max-width: 520px) { .of-price { grid-template-columns: 1fr; } }
+.of-total { display: grid; gap: 4px; }
+.of-big { font: 400 46px/52px Jost, Arial, sans-serif; color: var(--tinta); font-variant-numeric: tabular-nums; }
+.of-vat { color: var(--gris); font-size: 13px; }
+.of-pay { background: var(--arena); border-radius: 6px; padding: 6px 10px; font-size: 12px; margin-top: 8px; justify-self: start; }
+.of-hl { display: grid; gap: 6px; }
+.of-hl > div { background: var(--verde); color: var(--papel); padding: 6px 10px 8px; display: grid; }
+.of-hl span { font-size: 10px; line-height: 14px; text-transform: uppercase; letter-spacing: .04em; color: #c9d2cb; }
+.of-hl b { font: 400 17px/22px Jost, Arial, sans-serif; }
+.of-cond { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 13px; line-height: 20px; }
+.of-firma { margin-top: 14px; display: grid; gap: 6px; width: 240px; justify-self: end; }
+.of-linea { height: 42px; border-bottom: 1px solid var(--tinta); }
+.of-small { font-size: 11px; color: var(--gris); }
+.of-pie { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 10px; font: 400 10.5px/15px Jost, Arial, sans-serif; text-transform: uppercase; letter-spacing: .05em; color: var(--verde); }
+.of-pie span:last-child { text-transform: none; letter-spacing: .02em; }
 
-/* Al imprimir (Guardar como PDF) solo sale la oferta, en A4. */
-@page { size: A4; margin: 16mm 18mm; }
+/* Al imprimir (Guardar como PDF) solo sale el presupuesto, en A4 y con el fondo papel. */
+@page { size: A4; margin: 0; }
 @media print {
-  body { background: #fff !important; padding: 0 !important; }
+  html, body { background: #f7f5f0 !important; padding: 0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   body * { visibility: hidden; }
   #offer-doc, #offer-doc * { visibility: visible; }
-  #offer-doc { position: absolute; left: 0; top: 0; width: 100%; border: 0; padding: 0; gap: 18px; }
+  #offer-doc { position: absolute; left: 0; top: 0; width: 210mm; min-height: 297mm; border: 0; padding: 16mm 18mm 14mm; gap: 14px; }
   .topbar, .tabs, .fab, .no-print { display: none !important; }
-  .of-head img { height: 52px; }
-  .of-table tr, .of-totals, .of-firma, .of-pie { break-inside: avoid; }
+  .of-price { grid-template-columns: 1fr 64mm; }
+  .of-table tr, .of-price, .of-firma, .of-pie { break-inside: avoid; }
 }
