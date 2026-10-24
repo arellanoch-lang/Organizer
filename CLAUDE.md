@@ -8,7 +8,7 @@ La identidad oficial de Christel (Web · Apps · Procesos) está en `brand/IDENT
 y en la lámina `brand/identidad-visual.png`. Úsala siempre que pida algo con su
 marca (presupuestos, propuestas, presentaciones, firma, redes). Colores: carbón
 #2C302D, salvia #A7B5AA, piedra #E8E6DE, marfil #F7F5F0. Tipografías: Jost y Manrope.
-El artefacto «Christel Arellano» (verde #2F5D50 y terracota, Fraunces) NO es su identidad.
+El sistema de diseño «Christel Arellano» (https://claude.ai/artifact/WXW7miS8bwibiYcfS1ke82) ya está corregido con esta identidad desde el 24/10/2026. Si alguna vez aparece verde #2F5D50, terracota o Fraunces, es la versión antigua y equivocada.
 
 ## Al cambiar la app
 
