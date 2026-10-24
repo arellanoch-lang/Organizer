@@ -287,6 +287,24 @@ dialog p { font-size: 15px; }
 details.card .zones { margin-top: 4px; }
 
 /* CRM */
+.hero-row { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+.msgs { display: grid; gap: 10px; }
+.msgs h2 { margin: 0; }
+.tpl-btns { display: flex; flex-wrap: wrap; gap: 6px; }
+.tpl-btns .btn[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.tpl-box { display: grid; gap: 8px; }
+.tpl-actions > .btn { flex: 1 1 auto; }
+.offer-btn { justify-self: start; }
+.vars .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
+.vars code { font: 600 13px var(--mono); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 2px 6px; }
+.tpl-edit { display: grid; gap: 8px; }
+.tpl-edit label, .card > .form label { display: grid; gap: 4px; font-size: 14px; color: var(--muted); }
+.offer-form { display: grid; gap: 10px; }
+.offer-form label { display: grid; gap: 4px; font-size: 14px; color: var(--muted); }
+.offer-form h3 { margin-top: 4px; }
+.ol-list { display: grid; gap: 6px; }
+.ol-row { display: grid; grid-template-columns: 1fr 96px auto; gap: 6px; align-items: center; }
+
 .crm-tools { display: flex; gap: 8px; }
 .crm-tools input { flex: 1; }
 .crm-list { display: grid; gap: 8px; }

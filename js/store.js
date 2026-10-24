@@ -1,4 +1,4 @@
-import { SEED_CONTACTS, UNIXO_SEED, EXTRA_CONTACTS } from "./data.js";
+import { SEED_CONTACTS, UNIXO_SEED, EXTRA_CONTACTS, TEMPLATES_SEED, OFFER_CONDITIONS } from "./data.js";
 
 // Todo se guarda en este dispositivo (localStorage). Usa «Copia de seguridad»
 // para pasar los datos a otro móvil o guardarlos fuera.
@@ -17,6 +17,10 @@ const empty = () => ({
   tasks: [],       // {id, text, date, area, done, created}
   contacts: [],    // {id, name, company, phone, email, status, service, value, source, link, notes, followups[], log[]}
   reviews: {},     // lunes de la semana -> { text }
+  templates: [],   // mensajes tipo del CRM {id, name, subject, text}
+  profile: {},     // mis datos para la oferta {name, email, phone, city, nif, web}
+  offerCond: "",   // condiciones por defecto de la oferta
+  offerSeq: 0,     // último número de oferta
   unixo: { summary: "", phases: [] },
 });
 
@@ -40,6 +44,13 @@ function load() {
     if (st.extraAdded[c.id]) continue;
     if (!st.contacts.some(x => x.id === c.id)) st.contacts.push(structuredClone(c));
     st.extraAdded[c.id] = true;
+  }
+  // Plantillas de mensajes y datos de la oferta: se cargan una vez.
+  if (!st.templatesSeeded) {
+    if (!st.templates.length) st.templates = structuredClone(TEMPLATES_SEED);
+    st.profile = { name: "Christel Arellano", email: "", phone: "", city: "", nif: "", web: "", ...st.profile };
+    st.offerCond ||= OFFER_CONDITIONS;
+    st.templatesSeeded = true;
   }
   return st;
 }

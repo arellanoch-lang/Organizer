@@ -124,3 +124,17 @@ PROVEEDORES
     ] },
   ],
 };
+
+// Mensajes tipo del CRM. Variables: {nombre} {empresa} {servicio} {precio}
+// {enlace} {fecha} {mi_nombre}. Se editan en Clientes → Plantillas.
+export const TEMPLATES_SEED = [
+  { id: "propuesta", name: "Envío de propuesta", subject: "Propuesta para {empresa}",
+    text: "Hola {nombre}, ¿qué tal?\n\nTe envío la propuesta para {empresa}: {enlace}\n\nEn ella verás cómo funcionaría, qué ganaría tu negocio y el precio cerrado: {precio}, pago único.\n\nCualquier duda me dices y lo hablamos.\n\nUn saludo,\n{mi_nombre}" },
+  { id: "seguimiento", name: "¿Qué te parece la propuesta?", subject: "¿Qué te ha parecido la propuesta?",
+    text: "Hola {nombre}, ¿qué tal?\n\nTe escribo para saber si has podido ver la propuesta que te envié para {empresa}. ¿Qué te ha parecido?\n\nSi quieres, lo vemos juntos en 10 minutos por teléfono y te resuelvo cualquier duda.\n\nUn saludo,\n{mi_nombre}" },
+  { id: "oferta", name: "Te adjunto la oferta final", subject: "Oferta final · {empresa}",
+    text: "Hola {nombre}:\n\nTe adjunto la oferta final para {empresa} con el precio y las condiciones que hablamos: {precio}, pago único.\n\nSi te parece bien, respóndeme con un «adelante» y te cuento los siguientes pasos para empezar.\n\nUn saludo,\n{mi_nombre}" },
+];
+
+// Condiciones por defecto de la oferta final. Lo que va [entre corchetes] hay que completarlo.
+export const OFFER_CONDITIONS = "Precio cerrado y pago único, sin cuotas mensuales.\nForma de pago: [50 % al aceptar la oferta y 50 % a la entrega].\nPlazo de entrega: [3] semanas desde la aceptación.\nIncluye [2] rondas de cambios y una sesión para explicarte cómo usarlo.\nValidez de la oferta: 30 días.";
