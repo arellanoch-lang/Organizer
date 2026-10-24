@@ -638,7 +638,7 @@ function offerOf(c) {
   if (!c.offer) {
     state.offerSeq = (state.offerSeq || 0) + 1;
     c.offer = {
-      num: `${new Date().getFullYear()}-${String(state.offerSeq).padStart(3, "0")}`,
+      num: `PR-${String(state.offerSeq).padStart(3, "0")}`,
       date: today(), valid: "30",
       title: c.service ? `${c.service} para ${c.name}` : `Propuesta para ${c.name}`,
       desc: "", lines: [{ text: c.service || "Proyecto completo", price: c.value || "" }],
@@ -668,10 +668,17 @@ function offerDoc(c) {
   const contact = [me.phone, me.email, me.city, me.web, me.nif && "NIF " + me.nif].filter(Boolean);
   const vatLine = o.vat === "21" ? `+ IVA · ${money2(withVat)} en total · proyecto completo`
     : o.vat === "inc" ? "IVA incluido · proyecto completo" : "IVA no incluido · proyecto completo";
-  const logo = `<div class="of-logo"><img src="brand/marca.png" alt=""><span><b>Christel Arellano</b><span>Web · Apps · Procesos</span></span></div>`;
-  return `<header class="of-head">${logo}
-      <div class="of-meta"><span>${esc(o.docType)} nº ${esc(o.num)}</span><span>${esc(dmy(o.date))} · Válido ${esc(o.valid)} días</span></div></header>
-    <p class="of-eyebrow">${esc(o.docType)} · ${esc(c.name)}</p>
+  const logo = `<div class="of-logo"><img src="brand/marca.png" alt=""><span><b>Christel</b><span>Web · Apps · Procesos</span></span></div>`;
+  const longDate = o.date ? new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "long", year: "numeric" }).format(new Date(o.date + "T12:00")) : "";
+  return `<header class="of-head">${logo}<p class="of-lema">Soluciones digitales<br>que hacen crecer<br>tu negocio</p></header>
+    <div class="of-filete"></div>
+    <p class="of-doctype">${esc(o.docType)}</p>
+    <dl class="of-datos">
+      <dt>Cliente</dt><dd>${esc(c.name)}${c.person ? ` · ${esc(c.person)}` : ""}</dd>
+      <dt>Proyecto</dt><dd>${esc(o.title)}</dd>
+      <dt>Fecha</dt><dd>${esc(longDate)} · válido ${esc(o.valid)} días</dd>
+      <dt>Ref.</dt><dd>${esc(o.num)}</dd>
+    </dl>
     <h1 class="of-title">${esc(o.title)}</h1>
     ${o.desc ? `<p class="of-desc">${esc(o.desc)}</p>` : ""}
     <span class="of-rule"></span>
@@ -685,7 +692,7 @@ function offerDoc(c) {
     </div>
     ${cond.length ? `<p class="of-eyebrow">03 · Condiciones</p><ul class="of-cond">${cond.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
     <div class="of-firma"><span class="of-eyebrow">Aceptación del cliente</span><span class="of-linea"></span><span class="of-small">Nombre, fecha y firma</span></div>
-    <footer class="of-pie"><span>Christel · ${esc(o.docType)} ${esc(c.name)}</span><span>${contact.map(esc).join(" · ")}</span></footer>`;
+    <footer class="of-pie"><span>Christel · Web · Apps · Procesos</span><span>${contact.map(esc).join(" · ")}</span></footer>`;
 }
 
 function viewOffer(c) {

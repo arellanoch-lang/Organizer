@@ -1,23 +1,29 @@
-/* Identidad de Christel Arellano (Web · Apps · Procesos), sacada de sus presupuestos.
+/* Identidad de Christel (Web · Apps · Procesos): ver brand/IDENTIDAD.md.
    Solo se usa en el presupuesto en PDF. */
 @font-face { font-family: "Jost"; src: url("../brand/fonts/Jost.woff2") format("woff2"); font-weight: 300 700; font-display: swap; }
 @font-face { font-family: "Manrope"; src: url("../brand/fonts/Manrope.woff2") format("woff2"); font-weight: 200 800; font-display: swap; }
 
 .offer {
-  --papel: #f7f5f0; --arena: #ebe6de; --tinta: #2c302d; --verde: #5c665e; --salvia: #a7b5aa; --linea: #d9d3c8; --gris: #6b716c;
+  --papel: #f7f5f0; --arena: #e8e6de; --tinta: #2c302d; --verde: #5c665e; --salvia: #a7b5aa; --linea: #d9d3c8; --gris: #6b716c;
   background: var(--papel); color: var(--tinta); font: 400 14px/22px Manrope, "Segoe UI", Arial, sans-serif;
   padding: 32px 26px; display: grid; gap: 14px; color-scheme: light; border: 1px solid var(--linea);
 }
 .offer * { box-sizing: border-box; }
 .offer p { margin: 0; }
-.of-head { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
-.of-logo { display: flex; align-items: center; gap: 2px; color: var(--verde); }
-.of-logo img { width: 46px; height: 46px; display: block; margin-right: -8px; }
-.of-logo > span { display: grid; font: 300 13px/17px Manrope, Arial, sans-serif; text-transform: uppercase; letter-spacing: .01em; }
-.of-logo b { font-weight: 400; color: var(--tinta); }
-.of-meta { display: grid; text-align: right; font: 400 11px/16px Jost, Arial, sans-serif; text-transform: uppercase; letter-spacing: .06em; color: var(--verde); }
+.of-head { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+.of-logo { display: flex; align-items: center; gap: 12px; color: var(--tinta); }
+.of-logo img { width: 48px; height: 48px; display: block; }
+.of-logo > span { display: grid; gap: 2px; }
+.of-logo b { font: 400 22px/24px Jost, Arial, sans-serif; letter-spacing: .24em; text-transform: uppercase; }
+.of-logo b + span { font: 400 8.5px/12px Jost, Arial, sans-serif; letter-spacing: .3em; text-transform: uppercase; }
+.of-lema { font: 400 10px/13px Manrope, Arial, sans-serif; color: var(--tinta); text-align: left; }
+.of-filete { height: 1px; background: var(--tinta); opacity: .55; margin: 4px 0 6px; }
+.of-doctype { font: 400 15px/20px Jost, Arial, sans-serif; letter-spacing: .14em; text-transform: uppercase; color: var(--tinta); margin-top: 8px !important; }
+.of-datos { display: grid; grid-template-columns: 70px 1fr; gap: 3px 10px; margin: 0; font-size: 12px; line-height: 17px; }
+.of-datos dt { font-weight: 600; }
+.of-datos dd { margin: 0; color: var(--tinta); }
 .of-eyebrow { font: 400 12px/16px Jost, Arial, sans-serif; text-transform: uppercase; letter-spacing: .06em; color: var(--verde); margin-top: 10px !important; }
-.of-title { font: 400 32px/38px Jost, Arial, sans-serif; color: var(--tinta); margin: 0; letter-spacing: -.005em; text-wrap: balance; }
+.of-title { font: 400 30px/36px Jost, Arial, sans-serif; color: var(--tinta); margin: 14px 0 0; letter-spacing: -.005em; text-wrap: balance; }
 .of-desc { font: 400 16px/26px Jost, Arial, sans-serif; color: var(--verde); white-space: pre-wrap; }
 .of-rule { display: block; width: 40px; height: 2px; background: var(--tinta); margin: 4px 0 6px; }
 .of-table { width: 100%; border-collapse: collapse; background: var(--arena); border-radius: 10px; overflow: hidden; }
@@ -31,8 +37,8 @@
 .of-vat { color: var(--gris); font-size: 13px; }
 .of-pay { background: var(--arena); border-radius: 6px; padding: 6px 10px; font-size: 12px; margin-top: 8px; justify-self: start; }
 .of-hl { display: grid; gap: 6px; }
-.of-hl > div { background: var(--verde); color: var(--papel); padding: 6px 10px 8px; display: grid; }
-.of-hl span { font-size: 10px; line-height: 14px; text-transform: uppercase; letter-spacing: .04em; color: #c9d2cb; }
+.of-hl > div { background: var(--tinta); color: var(--papel); padding: 6px 10px 8px; display: grid; }
+.of-hl span { font-size: 10px; line-height: 14px; text-transform: uppercase; letter-spacing: .06em; color: var(--salvia); }
 .of-hl b { font: 400 17px/22px Jost, Arial, sans-serif; }
 .of-cond { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 13px; line-height: 20px; }
 .of-firma { margin-top: 14px; display: grid; gap: 6px; width: 240px; justify-self: end; }
@@ -44,11 +50,13 @@
 /* Al imprimir (Guardar como PDF) solo sale el presupuesto, en A4 y con el fondo papel. */
 @page { size: A4; margin: 0; }
 @media print {
-  html, body { background: #f7f5f0 !important; padding: 0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  body * { visibility: hidden; }
-  #offer-doc, #offer-doc * { visibility: visible; }
-  #offer-doc { position: absolute; left: 0; top: 0; width: 210mm; min-height: 297mm; border: 0; padding: 16mm 18mm 14mm; gap: 14px; }
-  .topbar, .tabs, .fab, .no-print { display: none !important; }
+  html, body { background: #f7f5f0 !important; padding: 0 !important; margin: 0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  /* Solo el presupuesto: el resto de la pantalla no ocupa sitio (si no, salen páginas en blanco). */
+  .topbar, .tabs, .fab, dialog, .no-print, #view > *:not(#offer-doc) { display: none !important; }
+  #view { display: block !important; padding: 0 !important; max-width: none !important; }
+  #offer-doc { width: 210mm; height: 296mm; overflow: hidden; border: 0; padding: 16mm 18mm 12mm; gap: 14px; display: flex; flex-direction: column; }
+  #offer-doc .of-pie { margin-top: auto; }
+  #offer-doc .of-firma { align-self: flex-end; }
+  #offer-doc .of-rule { align-self: flex-start; flex: none; width: 40px; height: 2px; }
   .of-price { grid-template-columns: 1fr 64mm; }
-  .of-table tr, .of-price, .of-firma, .of-pie { break-inside: avoid; }
 }
