@@ -15,7 +15,8 @@ const empty = () => ({
   igHidden: {},    // publicaciones del plan que has borrado
   igExtra: [],     // publicaciones añadidas a mano
   tasks: [],       // {id, text, date, area, done, created}
-  contacts: [],    // {id, name, company, phone, email, status, notes, followups[], log[]}
+  contacts: [],    // {id, name, company, phone, email, status, service, value, source, link, notes, followups[], log[]}
+  reviews: {},     // lunes de la semana -> { text }
   unixo: { summary: "", phases: [] },
 });
 
@@ -31,6 +32,8 @@ function load() {
   // El plan de UNIXO se carga una sola vez, y solo si la sección está vacía.
   if (!st.unixoSeeded && !st.unixo.phases.length && !st.unixo.summary) st.unixo = structuredClone(UNIXO_SEED);
   st.unixoSeeded = true;
+  // Octubre 2026: se borra el calendario antiguo de Instagram (llega uno nuevo).
+  if (!st.igReset1) Object.assign(st, { igExtra: [], igDone: {}, igMove: {}, igHidden: {}, igReset1: true });
   return st;
 }
 

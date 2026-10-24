@@ -1,4 +1,4 @@
-import { RACE, HYBRID, WARMUP, ZONES, RUN_WEEKS, RUN_STRATEGY, RUN_RULES, IG, IG_WEEKS, IG_POSTS } from "./data.js";
+import { RACE, HYBRID, WARMUP, ZONES, RUN_WEEKS, RUN_STRATEGY, RUN_RULES, IG } from "./data.js";
 import { state, save, replaceState, uid } from "./store.js";
 import { photos, loadPhotos, addPhoto, deletePhoto, exportPhotos, importPhotos } from "./photos.js";
 
@@ -8,15 +8,39 @@ const pad = n => String(n).padStart(2, "0");
 const iso = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 const today = () => iso(new Date());
 const addDays = (s, n) => { const d = new Date(s + "T12:00"); d.setDate(d.getDate() + n); return iso(d); };
+const mondayOf = s => addDays(s, -((new Date(s + "T12:00").getDay() + 6) % 7));
 const dayFmt = new Intl.DateTimeFormat("es-ES", { weekday: "short", day: "numeric", month: "short" });
 const longFmt = new Intl.DateTimeFormat("es-ES", { weekday: "long", day: "numeric", month: "long" });
 const fd = s => dayFmt.format(new Date(s + "T12:00"));
 const fill = s => esc(s).replace(/\[([^\]]+)\]/g, '<span class="fill">[$1]</span>');
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+const initials = name => String(name || "?").split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join("").toUpperCase();
+const stripEmoji = s => s.replace(/^\p{Extended_Pictographic}️?\s*/u, "");
+
+// Números escritos a mano: «7,2» km, «1.200 €».
+const kmOf = v => { const n = parseFloat(String(v ?? "").replace(",", ".")); return isFinite(n) && n > 0 ? n : 0; };
+const euros = v => { const n = parseFloat(String(v ?? "").replace(/[€\s.]/g, "").replace(",", ".")); return isFinite(n) && n > 0 ? n : 0; };
+const money = n => n ? new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR", maximumFractionDigits: 0, useGrouping: "always" }).format(n) : "—";
+const kmFmt = n => n.toLocaleString("es-ES", { maximumFractionDigits: 1 });
+// «52:30» → 3150 s; «1:05:00» → 3900 s; «45» → 45 min.
+const secs = t => {
+  const p = String(t ?? "").trim().split(":").filter(Boolean).map(Number);
+  if (!p.length || p.some(isNaN)) return 0;
+  return p.length === 1 ? p[0] * 60 : p.reduce((a, v) => a * 60 + v, 0);
+};
+const paceFmt = s => { if (!s) return "—"; const r = Math.round(s); return `${Math.floor(r / 60)}:${pad(r % 60)}/km`; };
+const safeUrl = u => /^https?:\/\//i.test(u) ? u : "https://" + u;
 
 const AREAS = { personal: "Personal", freelance: "Freelance", unixo: "UNIXO", ig: "Instagram", run: "Correr" };
-const STATUS = { lead: "Posible cliente", propuesta: "Propuesta enviada", pausa: "En pausa", cliente: "Cliente activo", pasado: "Cliente pasado", descartado: "Descartado" };
+const STATUS = { lead: "Posible cliente", propuesta: "Propuesta enviada", cliente: "Cliente activo", pausa: "En pausa", pasado: "Cliente pasado", descartado: "Descartado" };
+const PIPE = Object.keys(STATUS);
+const CLOSED = ["pasado", "descartado"];
+const SERVICES = ["Web", "Tienda online", "App", "Reservas / pedidos online", "Mantenimiento", "Otro"];
+const SOURCES = ["Recomendación", "Instagram", "Contacto directo", "Web", "Otro"];
+const ACT = { call: "📞 Llamada", whatsapp: "💬 WhatsApp", email: "✉️ Email", meeting: "🤝 Reunión", note: "📝 Nota" };
+const ACT_ICON = { ...Object.fromEntries(Object.entries(ACT).map(([k, v]) => [k, v.split(" ")[0]])), done: "✅", stage: "🔀" };
 const RUN_TAG = { easy: "Suave", tempo: "Umbral", fast: "Series", race: "Carrera", test: "Test" };
+const FEEL = ["", "😫 Muy mal", "😕 Regular", "🙂 Bien", "😀 Muy bien", "🤩 Genial"];
 const fname = f => f === "reel" ? "Reel" : f === "story" ? "Historia" : "Carrusel";
 
 const daysToRace = () => Math.ceil((new Date(`${RACE.date}T${RACE.time}`) - new Date()) / 864e5);
@@ -47,13 +71,9 @@ function hybridDays(from, to) {
 }
 
 function igPosts() {
-  // El id sale de la fecha original; si la cambias, se guarda en igMove.
-  const base = IG_POSTS.map(p => ({ ...p, id: "ig" + p.date, extra: false, date: (state.igMove || {})["ig" + p.date] || p.date }));
-  const extra = state.igExtra.map(p => ({ ...p, extra: true }));
-  return [...base, ...extra]
-    .filter(p => !(state.igHidden || {})[p.id])
-    .map(p => ({ ...p, done: state.igDone[p.id] ?? !!p.pre }))
-    .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+  return state.igExtra
+    .map(p => ({ ...p, done: !!state.igDone[p.id] }))
+    .sort((a, b) => (a.date + (a.time || "")).localeCompare(b.date + (b.time || "")));
 }
 
 function agenda(from, to) {
@@ -73,7 +93,7 @@ function agenda(from, to) {
   });
   // Los clientes descartados o pasados ya no generan avisos de contacto.
   state.contacts.filter(c => !CLOSED.includes(c.status)).forEach(c => (c.followups || []).forEach(f => {
-    if (inR(f.date)) out.push({ date: f.date, kind: "fu", key: `${c.id}|${f.id}`, area: "freelance", title: `📞 Contactar a ${c.name}${c.company ? " (" + c.company + ")" : ""}`, sub: f.reason, done: f.done, link: "freelance" });
+    if (inR(f.date)) out.push({ date: f.date, kind: "fu", key: `${c.id}|${f.id}`, area: "freelance", title: `📞 ${c.name}${c.company ? " (" + c.company + ")" : ""}`, sub: f.reason, done: f.done, link: "freelance:" + c.id });
   }));
   state.unixo.phases.forEach(p => p.tasks.forEach(t => {
     if (inR(t.date)) out.push({ date: t.date, kind: "ux", key: `${p.id}|${t.id}`, area: "unixo", title: t.text, sub: p.name, done: t.done, link: "unixo" });
@@ -82,6 +102,8 @@ function agenda(from, to) {
   // Por día; dentro del día, primero lo que no tiene hora y luego por hora.
   return out.sort((a, b) => a.date.localeCompare(b.date) || (a.time || "").localeCompare(b.time || "") || order[a.kind] - order[b.kind]);
 }
+
+const overdueItems = () => agenda("0000-01-01", addDays(today(), -1)).filter(i => !i.done && i.kind !== "run");
 
 // Pasos de una fase ordenados por fecha; los que no tienen fecha, al final.
 const byDate = tasks => [...tasks].sort((a, b) => (a.date || "9999").localeCompare(b.date || "9999"));
@@ -96,25 +118,34 @@ function nextFollowup(c) {
 }
 
 /* ---------- piezas de interfaz ---------- */
-function itemRow(it, showDate) {
+const LINK_TXT = { insta: "Ver en Instagram", unixo: "Ver en UNIXO" };
+
+// Una tarea de la agenda. Se toca para ver sus opciones; el ✓ la marca hecha.
+function itemRow(it, o = {}) {
+  const k = `data-kind="${it.kind}" data-key="${esc(it.key)}"`;
+  const actions = [
+    it.kind === "run" && it.key.startsWith("s") && `<a class="btn small" href="#correr:${esc(it.key)}">📝 Cómo fue</a>`,
+    it.link && `<a class="btn small" href="#${esc(it.link)}">${LINK_TXT[it.link] || "Abrir ficha del cliente"} →</a>`,
+    !it.done && `<button type="button" class="btn small" data-act="remind" ${k}>🔔 Avisarme</button>`,
+    !it.done && !o.late && `<label class="chg">Cambiar día <input type="date" class="mini-date" data-act="move-date" ${k} value="${it.date}"></label>`,
+  ].filter(Boolean).join("");
   return `<div class="item${it.done ? " done" : ""}" style="--c:var(--a-${it.area})">
-    <input type="checkbox" aria-label="Hecho" data-act="toggle" data-kind="${it.kind}" data-key="${esc(it.key)}"${it.done ? " checked" : ""}>
+    <input type="checkbox" aria-label="Hecho" data-act="toggle" ${k}${it.done ? " checked" : ""}>
     <div class="item-body">
-      <div class="item-top">${it.time ? `<span class="item-time mono">${esc(it.time)}</span>` : ""}<span class="item-title">${esc(it.title)}</span><span class="tag">${AREAS[it.area] || ""}</span></div>
-      ${it.sub ? `<div class="item-sub">${esc(it.sub)}</div>` : ""}
-      ${showDate ? `<div class="item-date">${fd(it.date)}</div>` : ""}
-      ${showDate && !it.done ? moveControls(it) : ""}
-      ${!showDate && !it.done && it.kind === "run" ? `<label class="chg">Cambiar día <input type="date" class="mini-date" data-act="move-date" data-kind="run" data-key="${esc(it.key)}" value="${it.date}"></label>` : ""}
-      ${it.link ? `<a class="item-link" href="#${it.link}">Ver en ${it.link === "insta" ? "Instagram" : AREAS[it.link]} →</a>` : ""}
-      ${it.kind === "run" && it.key.startsWith("s") ? `<a class="item-link" href="#correr:${esc(it.key)}">📝 Cómo fue →</a>` : ""}
+      <details class="more" data-keep="it-${esc(it.kind)}-${esc(it.key)}">
+        <summary>
+          <span class="item-top">${it.time ? `<span class="item-time mono">${esc(it.time)}</span>` : ""}<span class="item-title">${esc(it.title)}</span><span class="tag">${AREAS[it.area] || ""}</span></span>
+          ${it.sub ? `<span class="item-sub clamp">${esc(it.sub)}</span>` : ""}
+          ${o.date ? `<span class="item-date">${fd(it.date)}</span>` : ""}
+        </summary>
+        <div class="item-actions">${actions}</div>
+      </details>
+      ${o.late && !it.done ? moveControls(it) : ""}
     </div>
-    ${it.done ? "" : bell(it.kind, it.key)}
   </div>`;
 }
 
-const bell = (kind, key) => `<button type="button" class="bell" aria-label="Avisarme" title="Avisarme" data-act="remind" data-kind="${kind}" data-key="${esc(key)}">🔔</button>`;
-
-// Botones para pasar algo atrasado a otro día.
+// Botones para pasar algo atrasado a otro día (o borrarlo).
 function moveControls(it) {
   const k = `data-kind="${it.kind}" data-key="${esc(it.key)}"`;
   return `<div class="move">
@@ -127,26 +158,30 @@ function moveControls(it) {
   </div>`;
 }
 
-function quickForm(defaultArea = "personal") {
-  return `<form class="card quick" data-form="quick">
-    <label class="sr" for="q-text">Nueva idea o tarea</label>
-    <input id="q-text" name="text" placeholder="Apunta lo que se te ocurra…" autocomplete="off" required>
+const bell = (kind, key) => `<button type="button" class="bell" aria-label="Avisarme" title="Avisarme" data-act="remind" data-kind="${kind}" data-key="${esc(key)}">🔔</button>`;
+
+function quickForm(withId = false) {
+  return `<form class="quick" data-form="quick">
+    <label class="sr"${withId ? ' for="q-text"' : ""}>Nueva idea o tarea</label>
+    <input${withId ? ' id="q-text"' : ""} name="text" placeholder="Apunta lo que se te ocurra…" autocomplete="off" required>
     <div class="row">
-      <select name="area" aria-label="Área">${Object.entries(AREAS).map(([k, v]) => `<option value="${k}"${k === defaultArea ? " selected" : ""}>${v}</option>`).join("")}</select>
+      <select name="area" aria-label="Área">${Object.entries(AREAS).map(([k, v]) => `<option value="${k}">${v}</option>`).join("")}</select>
       <input type="date" name="date" aria-label="Fecha (opcional)">
       <input type="time" name="time" aria-label="Hora (opcional)">
       <button class="btn primary">Añadir</button>
     </div>
-    <p class="hint">Sin fecha se queda en <a href="#ideas">Ideas</a>. Con fecha aparece en «Hoy» ese día.</p>
+    <p class="hint">Sin fecha se queda en <a href="#ideas">Ideas</a>. Con fecha aparece en «Mi día» ese día.</p>
   </form>`;
 }
 
-/* ---------- vistas ---------- */
+const tiles = list => `<div class="tiles">${list.map(([l, v, s]) => `<div class="tile"><span class="tile-l">${l}</span><b class="tile-v">${v}</b>${s ? `<span class="tile-s">${s}</span>` : ""}</div>`).join("")}</div>`;
+
+/* ---------- Mi día ---------- */
 const SHORT = { ig: "📸", fu: "", ux: "🧥", task: "✅" };
 
 function viewHoy() {
   const t = today();
-  const overdue = agenda("0000-01-01", addDays(t, -1)).filter(i => !i.done && i.kind !== "run");
+  const overdue = overdueItems();
   const now = agenda(t, t);
   const flexible = now.filter(i => !i.time);
   const timed = now.filter(i => i.time);
@@ -155,12 +190,14 @@ function viewHoy() {
   const left = now.filter(i => !i.done).length;
   const step = nextUnixoStep();
   const days = daysToRace();
+  const reviewTime = [5, 6, 0, 1].includes(new Date().getDay()); // de viernes a lunes
 
   const byDay = {};
   soon.forEach(i => (byDay[i.date] ||= []).push(i));
 
   // Resumen en una línea: lo que hay hoy, de un vistazo.
   const summary = now.map(i => `<span class="sum${i.done ? " done" : ""}">${i.time ? `<b>${esc(i.time)}</b> ` : ""}${i.kind === "run" ? esc(i.title) : `${SHORT[i.kind]} ${esc(i.title)}`}</span>`).join("");
+  const review = `<a class="card review-cta${reviewTime ? "" : " quiet"}" href="#semana"><span>📋</span><span><b>Repaso semanal</b><small>Qué hiciste, qué quedó pendiente y cómo viene la semana</small></span><span aria-hidden="true">›</span></a>`;
 
   return `<header class="hero">
       <p class="eyebrow">${esc(longFmt.format(new Date()))}</p>
@@ -168,20 +205,67 @@ function viewHoy() {
       <p class="lead">${now.length ? (left ? `Te quedan <b>${plural(left, "cosa", "cosas")}</b> de ${now.length}` : "<b>Todo hecho por hoy</b> 🎉") : "Día libre en la agenda"}${days > 0 ? ` · faltan <b>${days} días</b> para París` : ""}</p>
       ${now.length ? `<div class="summary">${summary}</div>` : ""}
     </header>
+    ${reviewTime ? review : ""}
     ${flexible.length ? `<section><h2>Durante el día</h2><div class="list">${flexible.map(i => itemRow(i)).join("")}</div></section>` : ""}
     ${timed.length ? `<section><h2>Con hora</h2><div class="list">${timed.map(i => itemRow(i)).join("")}</div></section>` : ""}
-    ${!now.length ? `<p class="empty">Nada en la agenda de hoy. Aprovecha para la bandeja de ideas o el siguiente paso de UNIXO.</p>` : ""}
-    ${overdue.length ? `<section><h2 class="late-h">Atrasado</h2><div class="list">${overdue.map(i => itemRow(i, true)).join("")}</div></section>` : ""}
-    ${step ? `<section><h2>Siguiente paso UNIXO</h2>${itemRow({ kind: "ux", key: `${step.phase.id}|${step.task.id}`, area: "unixo", title: step.task.text, sub: step.phase.name + (step.task.date ? " · " + fd(step.task.date) : "") + (step.task.notes ? " · " + step.task.notes : ""), done: false, link: "unixo" })}</section>` : ""}
-    <section><h2>Apuntar algo</h2>${quickForm()}</section>
+    ${!now.length ? `<p class="empty">Nada en la agenda de hoy. Aprovecha para la bandeja de ideas o el siguiente paso de UNIXO.</p>` : `<p class="hint">Toca una tarea para ver sus opciones. Con <b>+</b> añades cualquier cosa.</p>`}
+    ${overdue.length ? `<section><h2 class="late-h">Atrasado</h2><div class="list">${overdue.map(i => itemRow(i, { late: true, date: true })).join("")}</div></section>` : ""}
+    ${step ? `<section><h2>Siguiente paso UNIXO</h2>${itemRow({ kind: "ux", key: `${step.phase.id}|${step.task.id}`, area: "unixo", date: step.task.date || t, title: step.task.text, sub: step.phase.name + (step.task.date ? " · " + fd(step.task.date) : "") + (step.task.notes ? " · " + step.task.notes : ""), done: false, link: "unixo" })}</section>` : ""}
     ${inbox ? `<a class="card inbox" href="#ideas">💡 ${plural(inbox, "idea sin fecha", "ideas sin fecha")} en la bandeja →</a>` : ""}
     <section><h2>Próximos 7 días</h2>
       ${Object.keys(byDay).length ? Object.entries(byDay).map(([d, items]) => `<h3 class="day-h">${esc(fd(d))}</h3><div class="list">${items.map(i => itemRow(i)).join("")}</div>`).join("") : `<p class="empty">Semana despejada.</p>`}
-    </section>`;
+    </section>
+    ${reviewTime ? "" : review}`;
 }
 
-const FEEL = ["", "😫 Muy mal", "😕 Regular", "🙂 Bien", "😀 Muy bien", "🤩 Genial"];
+/* ---------- Repaso semanal ---------- */
+function viewSemana() {
+  const t = today();
+  const arg = route()[1];
+  const mon = /^\d{4}-\d{2}-\d{2}$/.test(arg || "") ? mondayOf(arg) : mondayOf(t);
+  const sun = addDays(mon, 6), nextMon = addDays(mon, 7);
+  const thisMon = mondayOf(t);
+  const items = agenda(mon, sun);
+  const done = items.filter(i => i.done);
+  const pending = items.filter(i => !i.done && i.date < t && i.kind !== "run");
+  const missedRuns = items.filter(i => !i.done && i.date < t && i.kind === "run");
+  const rest = items.filter(i => !i.done && i.date >= t);
+  const next = mon <= thisMon ? agenda(nextMon, addDays(nextMon, 6)) : [];
+  const runs = items.filter(i => i.kind === "run" && i.key.startsWith("s"));
+  const hybrids = items.filter(i => i.kind === "run" && i.key.startsWith("h"));
+  const km = runs.reduce((a, i) => a + kmOf((state.runNotes[i.key] || {}).km), 0);
+  const title = mon === thisMon ? "Esta semana" : mon === addDays(thisMon, -7) ? "Semana pasada" : mon > thisMon ? "Semana que viene" : "Semana del " + fd(mon);
+  const note = ((state.reviews ||= {})[mon] || {}).text || "";
+  const byDay = {};
+  next.forEach(i => (byDay[i.date] ||= []).push(i));
+  const monAfter = addDays(thisMon, 7);
 
+  return `<a class="back" href="#hoy">‹ Mi día</a>
+    <header class="hero"><p class="eyebrow">Repaso semanal</p><h1>${title}</h1>
+      <div class="week-nav"><a class="btn small" href="#semana:${addDays(mon, -7)}" aria-label="Semana anterior">‹</a><span>${fd(mon)} – ${fd(sun)}</span><a class="btn small" href="#semana:${nextMon}" aria-label="Semana siguiente">›</a></div>
+    </header>
+    ${tiles([
+      ["Entrenos", `${runs.filter(r => r.done).length}/${runs.length}`, hybrids.length ? `+ ${hybrids.filter(h => h.done).length}/${hybrids.length} hybrid` : ""],
+      ["Kilómetros", km ? kmFmt(km) : "—", km ? "apuntados en «Cómo fue»" : "apúntalos en «Cómo fue»"],
+      ["Tareas hechas", done.filter(i => i.kind === "task").length, ""],
+      ["Contactos hechos", done.filter(i => i.kind === "fu").length, "clientes"],
+      ["Pasos UNIXO", done.filter(i => i.kind === "ux").length, "hechos"],
+    ])}
+    ${pending.length ? `<section><h2 class="late-h">Se ha quedado pendiente</h2>
+        <p class="muted small">Decide qué hacer con cada cosa: hacerla, pasarla a otro día o borrarla.</p>
+        <div class="row bulk"><button type="button" class="btn small" data-act="move-all" data-week="${mon}" data-to="${t}">Todo a hoy</button><button type="button" class="btn small" data-act="move-all" data-week="${mon}" data-to="${monAfter}">Todo al lunes ${esc(fd(monAfter))}</button></div>
+        <div class="list">${pending.map(i => itemRow(i, { late: true, date: true })).join("")}</div></section>`
+      : mon <= thisMon ? `<p class="ok">✅ No se ha quedado nada pendiente.</p>` : ""}
+    ${missedRuns.length ? `<p class="muted small">Entrenos sin marcar: ${missedRuns.map(i => esc(stripEmoji(i.title))).join(", ")}. Si te saltaste alguno, no lo recuperes: sigue con el plan.</p>` : ""}
+    ${rest.length ? `<section><h2>${mon > thisMon ? "Lo que viene" : "Lo que queda esta semana"}</h2><div class="list">${rest.map(i => itemRow(i, { date: true })).join("")}</div></section>` : ""}
+    ${done.length ? `<details class="card" data-keep="rev-done"><summary>Hecho (${done.length})</summary><ul class="done-list">${done.map(i => `<li><span class="mono">${fd(i.date)}</span> ${esc(stripEmoji(i.title))}</li>`).join("")}</ul></details>` : ""}
+    ${next.length ? `<section><h2>La semana que viene</h2>${Object.entries(byDay).map(([d, list]) => `<h3 class="day-h">${esc(fd(d))}</h3><div class="list">${list.map(i => itemRow(i)).join("")}</div>`).join("")}</section>` : ""}
+    <section class="card"><h2>Notas del repaso</h2>
+      <textarea data-act="review" data-week="${mon}" rows="5" placeholder="¿Qué ha ido bien? ¿Qué cambiarías? ¿Qué es lo más importante la semana que viene?">${esc(note)}</textarea>
+      <p class="hint">Se guarda solo.</p></section>`;
+}
+
+/* ---------- 10K ---------- */
 // Desplegable de cada entreno: datos, comentario y capturas del reloj.
 function runNotes(s) {
   const n = state.runNotes[s.key] || {};
@@ -202,19 +286,72 @@ function runNotes(s) {
   </details>`;
 }
 
+// Progreso: lo que apuntas en «Cómo fue», resumido por semanas.
+function runProgress(sessions) {
+  const t = today();
+  const logged = sessions.map(s => {
+    const n = state.runNotes[s.key] || {};
+    const km = kmOf(n.km), sec = secs(n.time);
+    return { ...s, n, km, sec, pace: km && sec ? sec / km : 0 };
+  });
+  const weeks = RUN_WEEKS.map(w => {
+    const ss = logged.filter(s => s.week === w.n);
+    return { n: w.n, km: ss.reduce((a, s) => a + s.km, 0), done: ss.filter(s => s.done).length, total: ss.length, from: ss[0].date, to: ss[ss.length - 1].date };
+  });
+  const totalKm = weeks.reduce((a, w) => a + w.km, 0);
+  const paced = logged.filter(s => s.pace);
+  const avgPace = paced.length ? paced.reduce((a, s) => a + s.sec, 0) / paced.reduce((a, s) => a + s.km, 0) : 0;
+  const feels = logged.filter(s => +s.n.feel).map(s => +s.n.feel);
+  const feelAvg = feels.length ? Math.round(feels.reduce((a, b) => a + b, 0) / feels.length) : 0;
+  const done = logged.filter(s => s.done).length;
+  const cur = weeks.findIndex(w => w.from <= addDays(t, 6) && w.to >= t);
+  const recent = logged.filter(s => s.km || s.sec || +s.n.feel).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 6);
+
+  // Gráfico de barras: km por semana (una sola serie, sin leyenda).
+  const W = 320, H = 150, padX = 6, base = H - 22, top = 18;
+  const max = Math.max(5, ...weeks.map(w => w.km));
+  const slot = (W - padX * 2) / weeks.length, bw = slot - 10;
+  const best = weeks.reduce((b, w, i) => (w.km > weeks[b].km ? i : b), 0);
+  const bars = weeks.map((w, i) => {
+    const x = padX + i * slot + 5, h = (w.km / max) * (base - top), y = base - h, r = Math.min(4, h);
+    const path = h ? `<path d="M${x},${base} V${y + r} Q${x},${y} ${x + r},${y} H${x + bw - r} Q${x + bw},${y} ${x + bw},${y + r} V${base} Z" class="bar-mark${i === cur ? " cur" : ""}"/>` : "";
+    const label = w.km && (i === cur || i === best) ? `<text x="${x + bw / 2}" y="${y - 5}" class="bar-val">${kmFmt(w.km)}</text>` : "";
+    const info = `Semana ${w.n}: ${w.km ? kmFmt(w.km) + " km" : "sin km apuntados"} · ${w.done}/${w.total} sesiones`;
+    return `${path}${label}<text x="${x + bw / 2}" y="${H - 6}" class="bar-x${i === cur ? " cur" : ""}">S${w.n}</text>
+      <rect x="${x - 4}" y="${top - 10}" width="${bw + 8}" height="${base - top + 26}" class="bar-hit" data-act="kmbar" data-info="${esc(info)}"><title>${esc(info)}</title></rect>`;
+  }).join("");
+
+  return `<section><h2>Tu progreso</h2>
+    ${tiles([
+      ["Sesiones hechas", `${done}/${sessions.length}`, ""],
+      ["Km apuntados", totalKm ? kmFmt(totalKm) : "—", ""],
+      ["Ritmo medio", paceFmt(avgPace), paced.length ? plural(paced.length, "entreno", "entrenos") + " con tiempo" : "apunta km y tiempo"],
+      ["Sensaciones", feelAvg ? FEEL[feelAvg] : "—", ""],
+    ])}
+    <div class="card chart">
+      <p class="chart-t">Kilómetros por semana</p>
+      ${totalKm ? `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Kilómetros por semana del plan">${bars}<line x1="${padX}" x2="${W - padX}" y1="${base}" y2="${base}" class="bar-base"/></svg>
+        <p id="km-readout" class="muted small">Toca una barra para ver la semana.</p>`
+        : `<p class="muted">Al terminar un entreno, abre «📝 Cómo fue» y apunta los km y el tiempo: aquí verás cómo evolucionas.</p>`}
+    </div>
+    ${recent.length ? `<details class="card" data-keep="run-table"><summary>Últimos entrenos apuntados</summary>
+      <div class="tbl-wrap"><table class="tbl data"><thead><tr><th>Día</th><th>Entreno</th><th>Km</th><th>Tiempo</th><th>Ritmo</th><th></th></tr></thead><tbody>
+      ${recent.map(s => `<tr><td>${fd(s.date)}</td><td>${esc(s.title)}</td><td>${s.km ? kmFmt(s.km) : "—"}</td><td>${esc(s.n.time || "—")}</td><td>${paceFmt(s.pace)}</td><td>${(FEEL[s.n.feel] || "").split(" ")[0]}</td></tr>`).join("")}
+      </tbody></table></div></details>` : ""}
+  </section>`;
+}
+
 function viewCorrer() {
   const sessions = runSessions();
-  const done = sessions.filter(s => s.done).length;
   const days = daysToRace();
   const t = today();
   return `<header class="bib">
       <p class="eyebrow">${esc(RACE.name)} · domingo 6 de diciembre de 2026</p>
       <h1>Objetivo <span>${RACE.goal}</span></h1>
       <div class="facts"><span>Ritmo <b>6:30/km</b></span><span>Días <b>L · X · S</b></span><span>FC máx. <b>188</b></span>${days > 0 ? `<span>Faltan <b>${days} días</b></span>` : `<span><b>¡Día de carrera!</b></span>`}</div>
-      <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="${sessions.length}" aria-valuenow="${done}"><i style="width:${(done / sessions.length) * 100}%"></i></div>
-      <div class="facts"><span><b>${done}/${sessions.length}</b> sesiones hechas</span></div>
     </header>
-    <section><h2>Zonas</h2><div class="zones">${ZONES.map(z => `<div class="zone" style="--c:var(--r-${z.k})"><strong>${z.name}</strong><span class="mono">${esc(z.num)}</span><small>${esc(z.txt)}</small></div>`).join("")}</div></section>
+    ${runProgress(sessions)}
+    <details class="card" data-keep="zones"><summary>Zonas de pulso</summary><div class="zones">${ZONES.map(z => `<div class="zone" style="--c:var(--r-${z.k})"><strong>${z.name}</strong><span class="mono">${esc(z.num)}</span><small>${esc(z.txt)}</small></div>`).join("")}</div></details>
     ${RUN_WEEKS.map(w => {
       const ss = sessions.filter(s => s.week === w.n);
       const current = ss[0].date <= addDays(t, 6) && ss[ss.length - 1].date >= t;
@@ -229,19 +366,18 @@ function viewCorrer() {
           ${s.done ? "" : bell("run", s.key)}</div>`).join("")}</div>
       </section>`;
     }).join("")}
-    <section><h2>Calentamiento y hybrid</h2><div class="card"><p><b>Días de rodaje suave:</b> antes de salir, ${esc(WARMUP)}</p><p class="muted">Martes y jueves: hybrid a las ${HYBRID.time}. Aparece en «Tu día», donde puedes marcarlo o cambiarlo de día.</p></div></section>
+    <section><h2>Calentamiento y hybrid</h2><div class="card"><p><b>Días de rodaje suave:</b> antes de salir, ${esc(WARMUP)}</p><p class="muted">Martes y jueves: hybrid a las ${HYBRID.time}. Aparece en «Mi día», donde puedes marcarlo o cambiarlo de día.</p></div></section>
     <section><h2>Estrategia de carrera</h2><div class="card"><table class="tbl">${RUN_STRATEGY.map(([a, b]) => `<tr><td class="mono">${a}</td><td>${esc(b)}</td></tr>`).join("")}</table></div></section>
     <section><h2>Reglas del plan</h2><ul class="card rules">${RUN_RULES.map(r => `<li>${esc(r)}</li>`).join("")}</ul></section>`;
 }
 
-let igFilter = "all";
+/* ---------- Instagram ---------- */
 function postCard(p) {
   return `<article class="post ${p.f}${p.done ? " done" : ""}" id="${esc(p.id)}">
     <div class="post-top"><span class="when">${fd(p.date)}${p.time ? " · " + esc(p.time) : ""}</span><span class="chip ${p.f}">${fname(p.f)}</span></div>
     <h3>${esc(p.title)}</h3>
-    ${p.pillar ? `<p class="muted small">${esc(p.pillar)}</p>` : ""}
-    ${p.how && p.how.length ? `<details><summary>Cómo hacerlo</summary><ul>${p.how.map(x => `<li>${fill(x)}</li>`).join("")}</ul>${p.need ? `<p><b>Material:</b> ${esc(p.need)}</p>` : ""}</details>` : ""}
     ${p.cap ? `<div class="caption" id="cap-${esc(p.id)}">${fill(p.cap)}</div>` : ""}
+    ${p.need ? `<p class="muted small"><b>Material:</b> ${esc(p.need)}</p>` : ""}
     <div class="actions">
       ${p.cap ? `<button type="button" class="btn" data-act="copy" data-id="${esc(p.id)}">Copiar texto</button>` : ""}
       <label class="check"><input type="checkbox" data-act="toggle" data-kind="ig" data-key="${esc(p.id)}"${p.done ? " checked" : ""}> Publicado</label>
@@ -253,22 +389,13 @@ function postCard(p) {
 
 function viewInsta() {
   const posts = igPosts();
-  const vis = p => igFilter === "all" || (igFilter === "todo" && !p.done) || p.f === igFilter;
-  const n = posts.filter(p => p.done).length;
-  const inWeek = p => !p.extra && IG_WEEKS.some(w => p.date >= w.from && p.date <= w.to);
-  const extra = posts.filter(p => !inWeek(p));
-  const weeks = IG_WEEKS.map(w => ({ ...w, posts: posts.filter(p => inWeek(p) && p.date >= w.from && p.date <= w.to && vis(p)) }));
-  const extraVis = extra.filter(vis);
+  const late = posts.filter(p => !p.done && p.date < today()).length;
   return `<header class="hero"><p class="eyebrow">${esc(IG.account)}</p><h1>Instagram</h1>
-      <p class="lead">2 reels y 1 carrusel por semana. Reels martes 20:00 y domingo 11:00; carruseles jueves 20:00. <b>${n} de ${posts.length}</b> publicados.</p></header>
-    <details class="card"><summary>En cada publicación</summary><ul class="rules">${IG.rules.map(r => `<li>${r}</li>`).join("")}</ul></details>
-    ${(() => { const late = posts.filter(p => !p.done && p.date < today()).length;
-      return late ? `<div class="card late-card"><p><b>${plural(late, "publicación atrasada", "publicaciones atrasadas")}</b> sin publicar.</p><p class="muted small">Puedes pasarlas a otro día desde «Tu día» o borrarlas aquí, una a una o todas a la vez.</p><button type="button" class="btn danger small" data-act="del-late-posts">Borrar todas las atrasadas</button></div>` : ""; })()}
-    <div class="filter" role="group" aria-label="Filtrar">${[["all", "Todo"], ["todo", "Pendientes"], ["reel", "Reels"], ["carr", "Carruseles"]].map(([k, v]) => `<button type="button" data-act="igfilter" data-f="${k}" aria-pressed="${igFilter === k}">${v}</button>`).join("")}</div>
-    ${weeks.map(w => w.posts.length ? `<section><div class="week-h"><h2>${w.n}</h2><span>${fd(w.from)} – ${fd(w.to)}</span></div>
-      <p class="stories"><b>Historias:</b> ${esc(w.stories)}</p><div class="list">${w.posts.map(postCard).join("")}</div></section>` : "").join("")}
-    ${extraVis.length ? `<section><h2>Más publicaciones</h2><div class="list">${extraVis.map(postCard).join("")}</div></section>` : ""}
-    <details class="card" data-keep="new-post"${extra.length ? "" : " open"}><summary>+ Añadir publicación</summary>
+      <p class="lead">${posts.length ? `<b>${posts.filter(p => p.done).length} de ${posts.length}</b> publicados.` : "Calendario vacío."}</p></header>
+    ${posts.length ? "" : `<div class="card empty-card"><p><b>Aquí irá tu nuevo calendario.</b></p><p class="muted">Cuando lo tengas, pásamelo (artefacto, documento o captura) y lo cargo con fechas, horas y textos listos para copiar. Mientras tanto puedes añadir publicaciones a mano.</p></div>`}
+    ${late ? `<div class="card late-card"><p><b>${plural(late, "publicación atrasada", "publicaciones atrasadas")}</b> sin publicar.</p><button type="button" class="btn danger small" data-act="del-late-posts">Borrar todas las atrasadas</button></div>` : ""}
+    ${posts.length ? `<div class="list">${posts.map(postCard).join("")}</div>` : ""}
+    <details class="card" data-keep="new-post"${posts.length ? "" : " open"}><summary>+ Añadir publicación</summary>
       <form data-form="post" class="form">
         <label>Título<input name="title" required></label>
         <div class="row"><label>Fecha<input type="date" name="date" required></label><label>Hora<input type="time" name="time" value="20:00"></label>
@@ -279,85 +406,160 @@ function viewInsta() {
       </form></details>`;
 }
 
-const openContacts = new Set();
-// Filtro de la lista de clientes (se recuerda en este móvil).
+/* ---------- Clientes (CRM) ---------- */
 let clientFilter = "all";
 try { clientFilter = localStorage.getItem("organizer-client-filter") || "all"; } catch (e) { /* sin almacenamiento */ }
-const CLOSED = ["pasado", "descartado"];
+let clientQuery = "";
+
+const isDue = (c, t) => { const f = nextFollowup(c); return !CLOSED.includes(c.status) && !!f && f.date <= t; };
 
 function viewFreelance() {
+  const id = route()[1];
+  if (id === "new") return viewNewContact();
+  const one = id && findContact(id);
+  if (one) return viewContact(one);
+
   const t = today();
-  const isDue = c => { const f = nextFollowup(c); return !CLOSED.includes(c.status) && !!f && f.date <= t; };
-  // Primero los que siguen en juego, por fecha del próximo contacto; los cerrados, al final.
   const all = [...state.contacts].sort((a, b) => {
     const fa = nextFollowup(a), fb = nextFollowup(b);
     return Number(CLOSED.includes(a.status)) - Number(CLOSED.includes(b.status))
       || (fa ? fa.date : "9999").localeCompare(fb ? fb.date : "9999") || a.name.localeCompare(b.name);
   });
-  const due = all.filter(isDue).length;
   const count = k => all.filter(c => c.status === k).length;
+  const sum = sts => all.filter(c => sts.includes(c.status)).reduce((a, c) => a + euros(c.value), 0);
+  const due = all.filter(c => isDue(c, t)).length;
   if (clientFilter !== "all" && clientFilter !== "due" && !count(clientFilter)) clientFilter = "all";
-  const cs = all.filter(c => clientFilter === "all" || (clientFilter === "due" ? isDue(c) : c.status === clientFilter));
+  const cs = all.filter(c => clientFilter === "all" || (clientFilter === "due" ? isDue(c, t) : c.status === clientFilter));
   const chips = [["all", "Todos", all.length, ""], ["due", "📞 Por contactar", due, ""],
-    ...Object.entries(STATUS).filter(([k]) => count(k)).map(([k, v]) => [k, v, count(k), k])];
-  return `<header class="hero"><p class="eyebrow">Apps y webs</p><h1>Freelance</h1>
-      <p class="lead">${plural(state.contacts.length, "contacto", "contactos")}${due ? ` · <b>${plural(due, "pendiente", "pendientes")} de contactar</b>` : ""}</p></header>
-    <details class="card" data-keep="new-contact"${state.contacts.length ? "" : " open"}><summary>+ Nuevo contacto</summary>
-      <form data-form="contact" class="form">
-        <label>Nombre<input name="name" required autocomplete="off"></label>
-        <label>Empresa o proyecto<input name="company" autocomplete="off"></label>
-        <div class="row"><label>Teléfono<input name="phone" type="tel"></label><label>Email<input name="email" type="email"></label></div>
-        <label>Estado<select name="status">${Object.entries(STATUS).map(([k, v]) => `<option value="${k}">${v}</option>`).join("")}</select></label>
-        <div class="row"><label>Cuándo contactar<input type="date" name="date"></label><label>Por qué<input name="reason" placeholder="Enviar propuesta, llamar para…"></label></div>
-        <label>Notas<textarea name="notes" rows="3"></textarea></label>
-        <button class="btn primary">Guardar contacto</button>
-      </form></details>
+    ...PIPE.filter(k => count(k)).map(k => [k, STATUS[k], count(k), k])];
+
+  return `<header class="hero"><p class="eyebrow">Freelance · apps y webs</p><h1>Clientes</h1></header>
+    ${tiles([
+      ["Por contactar", due, due ? "hoy o atrasados" : "todo al día"],
+      ["En juego", count("lead") + count("propuesta"), "posibles y propuestas"],
+      ["En propuestas", money(sum(["propuesta"])), plural(count("propuesta"), "propuesta", "propuestas")],
+      ["Ganado", money(sum(["cliente", "pasado"])), "activos y pasados"],
+    ])}
+    <div class="crm-tools">
+      <input type="search" id="c-search" placeholder="Buscar por nombre, empresa…" value="${esc(clientQuery)}" aria-label="Buscar cliente">
+      <a class="btn primary" href="#freelance:new">+ Nuevo</a>
+    </div>
     ${all.length ? `<div class="filter" role="group" aria-label="Filtrar clientes">${chips.map(([k, label, n, st]) =>
       `<button type="button" data-act="cfilter" data-f="${k}" aria-pressed="${clientFilter === k}"${st ? ` class="st" style="--st:var(--st-${st})"` : ""}>${label} <span class="n">${n}</span></button>`).join("")}</div>` : ""}
-    <div class="list">${cs.map(c => contactCard(c, t)).join("") || `<p class="empty">${all.length ? "Ningún contacto con este filtro." : "Aún no hay contactos."}</p>`}</div>`;
+    <div class="crm-list">${cs.map(c => crmRow(c, t)).join("") || `<p class="empty">${all.length ? "Ningún cliente con este filtro." : "Aún no hay clientes. Pulsa «+ Nuevo»."}</p>`}</div>
+    <p class="empty" id="c-none" hidden>Ningún cliente coincide con la búsqueda.</p>`;
 }
 
-function contactCard(c, t) {
-  const nf = nextFollowup(c);
-  const fus = [...(c.followups || [])].sort((a, b) => Number(a.done) - Number(b.done) || a.date.localeCompare(b.date));
+function crmRow(c, t) {
+  const nf = nextFollowup(c), closed = CLOSED.includes(c.status);
+  const late = !closed && nf && nf.date < t, now = !closed && nf && nf.date === t;
+  const open = ["lead", "propuesta"].includes(c.status);
+  const next = closed ? (c.status === "descartado" ? "Descartado" : "Cliente pasado")
+    : nf ? `📞 ${fd(nf.date)} · ${esc(nf.reason)}` : open ? "⚠️ Sin próxima acción" : "Sin próxima acción";
+  const search = [c.name, c.company, c.service, c.email, c.phone, c.notes].join(" ").toLowerCase();
+  return `<a class="crm-row st-${c.status}" href="#freelance:${c.id}" style="--st:var(--st-${c.status})" data-search="${esc(search)}">
+    <span class="avatar" aria-hidden="true">${esc(initials(c.name))}</span>
+    <span class="crm-main">
+      <span class="crm-name">${esc(c.name)}</span>
+      ${c.company || c.service ? `<span class="crm-sub">${esc([c.company, c.service].filter(Boolean).join(" · "))}</span>` : ""}
+      <span class="crm-next${late ? " late" : now ? " today" : !nf && open ? " warn" : ""}">${next}</span>
+    </span>
+    <span class="crm-side"><span class="pill st-${c.status}">${STATUS[c.status] || ""}</span>${euros(c.value) ? `<span class="crm-val">${money(euros(c.value))}</span>` : ""}</span>
+  </a>`;
+}
+
+const options = (list, cur) => ["", ...list].map(v => `<option value="${esc(v)}"${v === (cur || "") ? " selected" : ""}>${v ? esc(v) : "—"}</option>`).join("");
+
+function viewNewContact() {
+  return `<a class="back" href="#freelance">‹ Clientes</a>
+    <header class="hero"><h1>Nuevo cliente</h1></header>
+    <form data-form="contact" class="card form">
+      <label>Nombre *<input name="name" required autocomplete="off"></label>
+      <label>Empresa o proyecto<input name="company" autocomplete="off"></label>
+      <div class="row"><label>Teléfono<input name="phone" type="tel"></label><label>Email<input name="email" type="email"></label></div>
+      <div class="row"><label>Servicio<select name="service">${options(SERVICES)}</select></label><label>Presupuesto (€)<input name="value" inputmode="decimal" placeholder="1.200"></label></div>
+      <div class="row"><label>Origen<select name="source">${options(SOURCES)}</select></label><label>Estado<select name="status">${PIPE.map(k => `<option value="${k}">${STATUS[k]}</option>`).join("")}</select></label></div>
+      <h3>Próxima acción</h3>
+      <div class="row"><label>Cuándo<input type="date" name="date"></label><label>Qué hay que hacer<input name="reason" placeholder="Enviar propuesta, llamar para…"></label></div>
+      <label>Notas<textarea name="notes" rows="3" placeholder="Qué necesita, cómo lo conociste…"></textarea></label>
+      <button class="btn primary">Guardar cliente</button>
+    </form>`;
+}
+
+function viewContact(c) {
+  const t = today();
+  const nf = nextFollowup(c), closed = CLOSED.includes(c.status);
+  const later = (c.followups || []).filter(f => !f.done && f !== nf).sort((a, b) => a.date.localeCompare(b.date));
   const wa = c.phone ? c.phone.replace(/[^\d+]/g, "").replace(/^\+/, "") : "";
-  return `<details class="contact st-${c.status}" style="--st:var(--st-${c.status})" data-cid="${c.id}"${openContacts.has(c.id) ? " open" : ""}>
-    <summary>
-      <div class="contact-h"><b>${esc(c.name)}</b><span class="pill st-${c.status}">${STATUS[c.status] || ""}</span></div>
-      ${c.company ? `<div class="muted small">${esc(c.company)}</div>` : ""}
-      ${CLOSED.includes(c.status) ? `<div class="next">${c.status === "descartado" ? "Descartado: no se le contactará" : "Cliente pasado: sin avisos"}</div>`
-        : `<div class="next${nf && nf.date < t ? " late" : nf && nf.date === t ? " today" : ""}">${nf ? `📞 ${fd(nf.date)} · ${esc(nf.reason)}` : "Sin próximo contacto"}</div>`}
-    </summary>
-    <div class="contact-body">
-      <div class="links">${c.phone ? `<a class="btn" href="tel:${esc(c.phone)}">Llamar</a><a class="btn" href="https://wa.me/${esc(wa)}" target="_blank" rel="noopener">WhatsApp</a>` : ""}${c.email ? `<a class="btn" href="mailto:${esc(c.email)}">Email</a>` : ""}</div>
-      <label>Estado<select data-act="cstatus" data-cid="${c.id}">${Object.entries(STATUS).map(([k, v]) => `<option value="${k}"${k === c.status ? " selected" : ""}>${v}</option>`).join("")}</select></label>
-      <h3>Cuándo y por qué contactar</h3>
-      <div class="list">${fus.map(f => `<div class="item${f.done ? " done" : ""}" style="--c:var(--a-freelance)">
-        <input type="checkbox" aria-label="Hecho" data-act="toggle" data-kind="fu" data-key="${c.id}|${f.id}"${f.done ? " checked" : ""}>
-        <div class="item-body"><div class="item-top"><span class="item-date mono">${fd(f.date)}</span><span class="item-title">${esc(f.reason)}</span></div></div>
-        ${f.done ? "" : bell("fu", `${c.id}|${f.id}`)}
-        <button type="button" class="x" aria-label="Borrar" data-act="del-fu" data-key="${c.id}|${f.id}">×</button></div>`).join("") || `<p class="empty">Nada programado.</p>`}</div>
-      <form data-form="fu" data-cid="${c.id}" class="row">
-        <input type="date" name="date" required aria-label="Fecha">
-        <input name="reason" required placeholder="Motivo" aria-label="Motivo">
-        <button class="btn primary">Añadir</button>
-      </form>
-      <h3>Notas</h3>
-      <textarea data-act="cnotes" data-cid="${c.id}" rows="3" placeholder="Presupuesto, qué necesita, cómo lo conociste…">${esc(c.notes)}</textarea>
-      <h3>Historial</h3>
-      <form data-form="log" data-cid="${c.id}" class="row"><input name="text" required placeholder="Qué hablasteis hoy" aria-label="Registro"><button class="btn">Registrar</button></form>
-      <ul class="log">${(c.log || []).map(l => `<li><span class="mono">${fd(l.date)}</span> ${esc(l.text)}</li>`).join("")}</ul>
-      <details class="edit"><summary>Editar datos</summary>
-        <form data-form="cedit" data-cid="${c.id}" class="form">
-          <label>Nombre<input name="name" required value="${esc(c.name)}"></label>
-          <label>Empresa o proyecto<input name="company" value="${esc(c.company)}"></label>
-          <div class="row"><label>Teléfono<input name="phone" type="tel" value="${esc(c.phone)}"></label><label>Email<input name="email" type="email" value="${esc(c.email)}"></label></div>
-          <div class="row"><button class="btn primary">Guardar</button><button type="button" class="btn danger" data-act="del-contact" data-cid="${c.id}">Borrar contacto</button></div>
-        </form></details>
+  const log = (c.log || []).map((l, i) => ({ ...l, i })).sort((a, b) => b.date.localeCompare(a.date));
+  const f = `data-cid="${c.id}"`;
+  const quick = [["+2 días", 2], ["+1 semana", 7], ["+2 semanas", 14], ["+1 mes", 30]];
+  return `<a class="back" href="#freelance">‹ Clientes</a>
+    <header class="crm-head" style="--st:var(--st-${c.status})">
+      <span class="avatar big" aria-hidden="true">${esc(initials(c.name))}</span>
+      <div><h1>${esc(c.name)}</h1><p class="muted">${esc([c.company, c.service].filter(Boolean).join(" · ")) || "Sin empresa"}${euros(c.value) ? ` · <b>${money(euros(c.value))}</b>` : ""}</p></div>
+    </header>
+    <div class="contact-actions">
+      ${c.phone ? `<a class="btn" href="tel:${esc(c.phone)}">📞 Llamar</a><a class="btn" href="https://wa.me/${esc(wa)}" target="_blank" rel="noopener">💬 WhatsApp</a>` : ""}
+      ${c.email ? `<a class="btn" href="mailto:${esc(c.email)}">✉️ Email</a>` : ""}
+      ${c.link ? `<a class="btn" href="${esc(safeUrl(c.link))}" target="_blank" rel="noopener">📄 Propuesta</a>` : ""}
+      ${!c.phone && !c.email ? `<span class="muted small">Añade teléfono o email en «Datos de contacto» para llamar o escribir desde aquí.</span>` : ""}
     </div>
-  </details>`;
+
+    <section><h2>Estado</h2>
+      <div class="stages" role="group" aria-label="Estado">${PIPE.map(k => `<button type="button" class="stage" data-act="cstatus-set" ${f} data-st="${k}" style="--st:var(--st-${k})" aria-pressed="${c.status === k}">${STATUS[k]}</button>`).join("")}</div>
+    </section>
+
+    <section class="card next-action${!closed && nf && nf.date < t ? " is-late" : ""}">
+      <h2>Próxima acción</h2>
+      ${closed ? `<p class="muted">Cliente cerrado: no hay avisos de contacto.</p>`
+        : nf ? `<div class="na">
+            <input type="checkbox" aria-label="Hecho" data-act="toggle" data-kind="fu" data-key="${c.id}|${nf.id}">
+            <div><p class="na-date${nf.date < t ? " late" : ""}">${nf.date < t ? "Atrasado · " : nf.date === t ? "Hoy · " : ""}${fd(nf.date)}</p><p class="na-what">${esc(nf.reason)}</p>
+              <div class="row na-tools"><label class="chg">Cambiar fecha <input type="date" class="mini-date" data-act="move-date" data-kind="fu" data-key="${c.id}|${nf.id}" value="${nf.date}"></label>
+              <button type="button" class="btn small" data-act="remind" data-kind="fu" data-key="${c.id}|${nf.id}">🔔 Avisarme</button>
+              <button type="button" class="btn small ghost" data-act="del-fu" data-key="${c.id}|${nf.id}">Quitar</button></div></div>
+          </div><p class="hint">Cuando lo hagas, márcalo ✓ y programa el siguiente paso aquí abajo.</p>`
+        : `<p class="warn">⚠️ No hay nada programado. Decide cuándo y por qué vuelves a contactar.</p>`}
+      ${later.length ? `<p class="muted small">Después: ${later.map(x => `${fd(x.date)} · ${esc(x.reason)}`).join(" — ")}</p>` : ""}
+      ${closed ? "" : `<form data-form="fu" ${f} class="form next-form">
+        <label>${nf ? "Programar otra acción" : "Qué hay que hacer"}<input id="next-reason" name="reason" required placeholder="Llamar para cerrar el presupuesto…"></label>
+        <div class="quick-dates">${quick.map(([l, n]) => `<button type="button" class="btn small" data-act="fu-date" data-to="${addDays(t, n)}">${l}</button>`).join("")}</div>
+        <div class="row"><input type="date" name="date" required aria-label="Fecha"><button class="btn primary">Programar</button></div>
+      </form>`}
+    </section>
+
+    <section><h2>Actividad</h2>
+      <form data-form="log" ${f} class="card form log-form">
+        <div class="types" role="radiogroup" aria-label="Tipo">${Object.entries(ACT).map(([k, v], i) => `<label class="type"><input type="radio" name="type" value="${k}"${i === 0 ? " checked" : ""}><span>${v}</span></label>`).join("")}</div>
+        <textarea name="text" rows="2" required placeholder="¿Qué habéis hablado? ¿Qué quedó pendiente?"></textarea>
+        <div class="row"><input type="date" name="date" value="${t}" aria-label="Fecha"><button class="btn primary">Registrar</button></div>
+      </form>
+      ${log.length ? `<ol class="timeline">${log.map(l => `<li><span class="tl-icon" aria-hidden="true">${ACT_ICON[l.type] || "📝"}</span><div><span class="mono">${fd(l.date)}</span><p>${esc(l.text)}</p></div><button type="button" class="x" aria-label="Borrar" data-act="del-log" ${f} data-i="${l.i}">×</button></li>`).join("")}</ol>` : `<p class="empty">Sin actividad todavía.</p>`}
+    </section>
+
+    <section class="card"><h2>Proyecto</h2>
+      <div class="form">
+        <div class="row"><label>Servicio<select data-act="cfield" data-f="service" ${f}>${options(SERVICES, c.service)}</select></label>
+          <label>Presupuesto (€)<input inputmode="decimal" data-act="cfield" data-f="value" ${f} value="${esc(c.value)}" placeholder="1.200"></label></div>
+        <div class="row"><label>Origen<select data-act="cfield" data-f="source" ${f}>${options(SOURCES, c.source)}</select></label>
+          <label>Enlace a la propuesta<input type="url" data-act="cfield" data-f="link" ${f} value="${esc(c.link)}" placeholder="https://…"></label></div>
+        <label>Notas<textarea data-act="cfield" data-f="notes" ${f} rows="4" placeholder="Qué necesita, presupuesto, cómo lo conociste…">${esc(c.notes)}</textarea></label>
+        <p class="hint">Se guarda solo.</p>
+      </div>
+    </section>
+
+    <section class="card"><h2>Datos de contacto</h2>
+      <div class="form">
+        <label>Nombre<input data-act="cfield" data-f="name" ${f} value="${esc(c.name)}"></label>
+        <label>Empresa o proyecto<input data-act="cfield" data-f="company" ${f} value="${esc(c.company)}"></label>
+        <div class="row"><label>Teléfono<input type="tel" data-act="cfield" data-f="phone" ${f} value="${esc(c.phone)}"></label><label>Email<input type="email" data-act="cfield" data-f="email" ${f} value="${esc(c.email)}"></label></div>
+      </div>
+      <button type="button" class="btn danger small del-c" data-act="del-contact" ${f}>Borrar cliente</button>
+    </section>`;
 }
 
+/* ---------- UNIXO ---------- */
 // Un paso de UNIXO: al tocarlo se abre para editarlo y añadir notas.
 function uxTask(p, t) {
   const key = `${p.id}|${t.id}`;
@@ -393,11 +595,10 @@ function viewUnixo() {
     ${step ? `<div class="card next-step"><p class="eyebrow">Siguiente paso</p><p><b>${esc(step.task.text)}</b></p><p class="muted small">${esc(step.phase.name)}${step.task.date ? " · " + fd(step.task.date) : ""}</p></div>` : ""}
     <details class="card" data-keep="ux-help"><summary>¿Cómo se usa?</summary>
       <ol class="rules">
-        <li>Haz solo el <b>siguiente paso</b> de arriba. También te sale en «Tu día» y, si tiene fecha, ese día.</li>
+        <li>Haz solo el <b>siguiente paso</b> de arriba. También te sale en «Mi día» y, si tiene fecha, ese día.</li>
         <li>Cuando lo hagas, márcalo ✓ y aparece el siguiente.</li>
-        <li>Si un proveedor te contesta, apunta lo importante en «Proveedores y notas del plan».</li>
+        <li>Toca un paso para cambiarlo o apuntar información (precios, respuestas…).</li>
         <li>¿Surge algo nuevo? Añádelo como paso dentro de su fase, con fecha si la tiene.</li>
-        <li>Si una fecha no te cuadra, cámbiala en el propio paso.</li>
       </ol></details>
     <details class="card" data-keep="ux-summary"${state.unixo.summary ? "" : " open"}><summary>Proveedores y notas del plan</summary>
       <textarea data-act="uxsummary" rows="6" placeholder="Objetivo, precios, proveedores, canales de venta…">${esc(state.unixo.summary)}</textarea></details>
@@ -410,9 +611,10 @@ function viewUnixo() {
         <button type="button" class="btn ghost small" data-act="del-phase" data-pid="${p.id}">Borrar fase</button>
       </section>`;
     }).join("")}
-    <form data-form="uxphase" class="card row"><input name="name" required placeholder="Nueva fase (p. ej. «1. Diseño y muestras»)" aria-label="Nueva fase"><button class="btn primary">Añadir fase</button></form>`;
+    <form data-form="uxphase" class="card row"><input name="name" required placeholder="Nueva fase (p. ej. «5. Segunda tirada»)" aria-label="Nueva fase"><button class="btn primary">Añadir fase</button></form>`;
 }
 
+/* ---------- Ideas ---------- */
 function viewIdeas() {
   const inbox = state.tasks.filter(t => !t.date && !t.done);
   const planned = state.tasks.filter(t => t.date && !t.done).sort((a, b) => a.date.localeCompare(b.date));
@@ -423,15 +625,17 @@ function viewIdeas() {
       <input type="date" class="mini-date" data-act="tdate" data-key="${t.id}" value="${esc(t.date)}" aria-label="Fecha"></div>
     <button type="button" class="x" aria-label="Borrar" data-act="del-task" data-key="${t.id}">×</button></div>`;
   return `<header class="hero"><p class="eyebrow">Para vaciar la cabeza</p><h1>Ideas y tareas</h1>
-      <p class="lead">Apunta todo aquí. Cuando sepas cuándo hacerlo, ponle fecha y saldrá en «Hoy».</p></header>
-    ${quickForm()}
+      <p class="lead">Apunta todo aquí. Cuando sepas cuándo hacerlo, ponle fecha y saldrá en «Mi día».</p></header>
+    <div class="card">${quickForm(true)}</div>
     <section><h2>Bandeja (sin fecha)</h2><div class="list">${inbox.map(row).join("") || `<p class="empty">Bandeja vacía.</p>`}</div></section>
     <section><h2>Con fecha</h2><div class="list">${planned.map(row).join("") || `<p class="empty">Nada programado.</p>`}</div></section>
     ${done.length ? `<details class="card"><summary>Hechas (${done.length})</summary><div class="list">${done.map(row).join("")}</div>
       <button type="button" class="btn ghost small" data-act="clear-done">Borrar las hechas</button></details>` : ""}`;
 }
 
-const VIEWS = { hoy: viewHoy, correr: viewCorrer, insta: viewInsta, freelance: viewFreelance, unixo: viewUnixo, ideas: viewIdeas };
+/* ---------- navegación y pintado ---------- */
+const VIEWS = { hoy: viewHoy, semana: viewSemana, correr: viewCorrer, insta: viewInsta, freelance: viewFreelance, unixo: viewUnixo, ideas: viewIdeas };
+const NAV = { semana: "hoy" }; // pestaña que se ilumina para vistas sin pestaña propia
 const route = () => location.hash.slice(1).split(":");
 const tab = () => (VIEWS[route()[0]] ? route()[0] : "hoy");
 
@@ -442,40 +646,61 @@ const draftId = f => f.dataset.form + ":" + (f.dataset.cid || f.dataset.pid || "
 function readDrafts() { try { return JSON.parse(localStorage.getItem(DRAFTS) || "{}"); } catch (e) { return {}; } }
 function writeDrafts(d) { try { localStorage.setItem(DRAFTS, JSON.stringify(d)); } catch (e) { /* sin espacio: no pasa nada */ } }
 
-document.addEventListener("input", e => {
-  const f = e.target.closest("form[data-form]");
-  if (!f || !e.target.name) return;
+function saveDraft(f) {
   const d = readDrafts();
   d[draftId(f)] = Object.fromEntries([...new FormData(f).entries()].filter(([, v]) => typeof v === "string"));
   writeDrafts(d);
+}
+
+document.addEventListener("input", e => {
+  if (e.target.id === "c-search") { clientQuery = e.target.value; return applySearch(); }
+  const f = e.target.closest("form[data-form]");
+  if (f && e.target.name) saveDraft(f);
 });
 
-function restoreDrafts() {
+function restoreDrafts(root = document) {
   const d = readDrafts();
-  document.querySelectorAll("form[data-form]").forEach(f => {
+  root.querySelectorAll("form[data-form]").forEach(f => {
     const v = d[draftId(f)];
-    if (!v || !Object.values(v).some(x => x && x.trim())) return;
+    // Solo cuenta como borrador si hay algo escrito (no solo la fecha o el tipo por defecto).
+    if (!v || !["text", "name", "reason", "title", "notes", "cap"].some(k => v[k] && v[k].trim())) return;
     for (const [name, val] of Object.entries(v)) { const el = f.elements[name]; if (el && "value" in el) el.value = val; }
     const det = f.closest("details");
     if (det) det.open = true;
   });
 }
 
+// Búsqueda de clientes sin repintar (para no perder el teclado).
+function applySearch() {
+  const q = clientQuery.trim().toLowerCase();
+  let shown = 0;
+  document.querySelectorAll(".crm-row").forEach(r => { const ok = !q || r.dataset.search.includes(q); r.hidden = !ok; shown += ok; });
+  const none = document.getElementById("c-none");
+  if (none) none.hidden = !q || shown > 0;
+}
+
 let renderedDay = "";
+let pendingFocus = "";
 function render() {
   const t = tab();
   const view = document.getElementById("view");
   const keep = new Set([...view.querySelectorAll("details[data-keep][open]")].map(d => d.dataset.keep));
   view.innerHTML = VIEWS[t]();
   view.querySelectorAll("details[data-keep]").forEach(d => { if (keep.has(d.dataset.keep)) d.open = true; });
-  restoreDrafts();
+  restoreDrafts(view);
+  applySearch();
   renderedDay = today();
-  document.querySelectorAll("nav.tabs a").forEach(a => a.toggleAttribute("aria-current", a.getAttribute("href") === "#" + t));
-  const late = agenda("0000-01-01", addDays(today(), -1)).filter(i => !i.done && i.kind !== "run").length
-    + agenda(today(), today()).filter(i => !i.done).length;
+  const navTab = NAV[t] || t;
+  document.querySelectorAll("nav.tabs a").forEach(a => a.toggleAttribute("aria-current", a.getAttribute("href") === "#" + navTab));
+  const late = overdueItems().length + agenda(today(), today()).filter(i => !i.done).length;
   const badge = document.getElementById("badge");
   badge.textContent = late || "";
   badge.hidden = !late;
+  if (pendingFocus) {
+    const el = view.querySelector(pendingFocus);
+    pendingFocus = "";
+    if (el) { const det = el.closest("details"); if (det) det.open = true; el.scrollIntoView({ block: "center" }); el.focus(); }
+  }
 }
 
 /* ---------- acciones ---------- */
@@ -486,15 +711,12 @@ function findUx(key) {
   return { p, t: p && p.tasks.find(x => x.id === tid) };
 }
 
-// Las publicaciones del plan no se borran del código: se ocultan.
 function deletePost(id) {
-  if (state.igExtra.some(p => p.id === id)) state.igExtra = state.igExtra.filter(p => p.id !== id);
-  else (state.igHidden ||= {})[id] = true;
+  state.igExtra = state.igExtra.filter(p => p.id !== id);
   delete state.igDone[id];
-  if (state.igMove) delete state.igMove[id];
 }
 
-function moveTo(kind, key, date) {
+function setDate(kind, key, date) {
   if (!date) return;
   if (kind === "run") state.runMove[key] = date;
   else if (kind === "task") { const t = state.tasks.find(x => x.id === key); if (t) t.date = date; }
@@ -504,14 +726,19 @@ function moveTo(kind, key, date) {
     const f = findContact(cid)?.followups.find(x => x.id === fid);
     if (f) f.date = date;
   } else if (kind === "ig") {
-    const extra = state.igExtra.find(p => p.id === key);
-    if (extra) extra.date = date;
-    else (state.igMove ||= {})[key] = date;
+    const p = state.igExtra.find(x => x.id === key);
+    if (p) p.date = date;
   }
+}
+
+function moveTo(kind, key, date) {
+  if (!date) return;
+  setDate(kind, key, date);
   save(); render();
 }
 
 function toggle(kind, key, on) {
+  let focusNext = false;
   if (kind === "run") state.runDone[key] = on;
   else if (kind === "ig") state.igDone[key] = on;
   else if (kind === "task") { const t = state.tasks.find(x => x.id === key); if (t) t.done = on; }
@@ -522,9 +749,12 @@ function toggle(kind, key, on) {
     if (f) {
       f.done = on;
       c.log = (c.log || []).filter(l => l.fu !== fid);
-      if (on) c.log.unshift({ date: today(), text: "Contactado: " + f.reason, fu: fid });
+      if (on) c.log.unshift({ date: today(), type: "done", text: "Hecho: " + f.reason, fu: fid });
+      // En la ficha del cliente, tras marcarlo pasamos directamente a programar el siguiente.
+      focusNext = on && route()[0] === "freelance" && route()[1] === cid && !nextFollowup(c);
     }
   }
+  if (focusNext) pendingFocus = "#next-reason";
   save(); render();
 }
 
@@ -554,11 +784,17 @@ document.addEventListener("change", e => {
       .then(render);
     return;
   }
-  if (act === "cstatus") { findContact(el.dataset.cid).status = el.value; save(); return render(); }
-  if (act === "cnotes") { findContact(el.dataset.cid).notes = el.value; return save(); }
+  if (act === "review") { (state.reviews ||= {})[el.dataset.week] = { text: el.value }; return save(); }
+  if (act === "cfield") {
+    // Se guarda sin repintar, para no perder el toque en otro botón.
+    const c = findContact(el.dataset.cid), v = el.value.trim();
+    if (!c || (el.dataset.f === "name" && !v)) return;
+    c[el.dataset.f] = el.dataset.f === "notes" ? el.value : v;
+    if (el.dataset.f === "name") { const h = document.querySelector(".crm-head h1"); if (h) h.textContent = v; }
+    return save();
+  }
   if (act === "uxsummary") { state.unixo.summary = el.value; return save(); }
   if (act === "uxphase-name") { const p = state.unixo.phases.find(x => x.id === el.dataset.pid); if (p && el.value.trim()) p.name = el.value.trim(); return save(); }
-  if (act === "uxdate") { const { t } = findUx(el.dataset.key); if (t) t.date = el.value; save(); return render(); }
   if (act === "tdate") { const t = state.tasks.find(x => x.id === el.dataset.key); if (t) t.date = el.value; save(); return render(); }
 });
 
@@ -571,25 +807,54 @@ document.addEventListener("click", e => {
   if (act === "remind") return openRemind(el.dataset.kind, el.dataset.key);
   if (act === "photo-open") { document.getElementById("photo-img").src = el.src; return document.getElementById("photo").showModal(); }
   if (act === "photo-del") { if (confirm("¿Borrar esta captura?")) deletePhoto(el.dataset.id).then(render); return; }
-  if (act === "igfilter") { igFilter = el.dataset.f; return render(); }
+  if (act === "kmbar") { const r = document.getElementById("km-readout"); if (r) r.textContent = el.dataset.info; return; }
+  if (act === "fu-date") {
+    const f = el.closest("form");
+    f.elements.date.value = el.dataset.to;
+    saveDraft(f);
+    return;
+  }
   if (act === "cfilter") {
     clientFilter = el.dataset.f;
     try { localStorage.setItem("organizer-client-filter", clientFilter); } catch (e) { /* sin almacenamiento */ }
     return render();
   }
+  if (act === "add-go") {
+    addDlg.close();
+    pendingFocus = el.dataset.focus || "";
+    if (location.hash === "#" + el.dataset.to) render(); // ya estabas ahí: no habrá hashchange
+    else location.hash = el.dataset.to;
+    return;
+  }
+
   if (act === "del-post" && confirm("¿Borrar esta publicación?")) {
     deletePost(el.dataset.id);
   } else if (act === "del-late-posts") {
     const late = igPosts().filter(p => !p.done && p.date < today());
     if (!confirm(`¿Borrar ${plural(late.length, "publicación atrasada", "publicaciones atrasadas")} sin publicar?`)) return;
     late.forEach(p => deletePost(p.id));
+  } else if (act === "move-all") {
+    const mon = el.dataset.week;
+    const list = agenda(mon, addDays(mon, 6)).filter(i => !i.done && i.date < today() && i.kind !== "run");
+    if (!confirm(`¿Pasar ${plural(list.length, "cosa", "cosas")} al ${fd(el.dataset.to)}?`)) return;
+    list.forEach(i => setDate(i.kind, i.key, el.dataset.to));
   } else if (act === "del-task-late" && confirm("¿Borrar esta tarea?")) {
     state.tasks = state.tasks.filter(t => t.id !== el.dataset.key);
   } else if (act === "del-fu") {
     const [cid, fid] = el.dataset.key.split("|"); const c = findContact(cid);
     c.followups = c.followups.filter(f => f.id !== fid);
-  } else if (act === "del-contact" && confirm("¿Borrar este contacto y todo su historial?")) {
-    state.contacts = state.contacts.filter(c => c.id !== el.dataset.cid); openContacts.delete(el.dataset.cid);
+  } else if (act === "cstatus-set") {
+    const c = findContact(el.dataset.cid);
+    if (!c || c.status === el.dataset.st) return;
+    c.status = el.dataset.st;
+    (c.log ||= []).unshift({ date: today(), type: "stage", text: "Estado: " + STATUS[c.status] });
+  } else if (act === "del-log") {
+    const c = findContact(el.dataset.cid);
+    if (!c || !confirm("¿Borrar esta actividad?")) return;
+    c.log.splice(+el.dataset.i, 1);
+  } else if (act === "del-contact" && confirm("¿Borrar este cliente y todo su historial?")) {
+    state.contacts = state.contacts.filter(c => c.id !== el.dataset.cid);
+    save(); location.hash = "freelance"; return;
   } else if (act === "del-ux" && confirm("¿Borrar este paso?")) {
     const { p, t } = findUx(el.dataset.key); if (p) p.tasks = p.tasks.filter(x => x !== t);
   } else if (act === "del-phase" && confirm("¿Borrar la fase y todos sus pasos?")) {
@@ -608,22 +873,23 @@ document.addEventListener("submit", e => {
   e.preventDefault();
   const v = Object.fromEntries(new FormData(f).entries());
   for (const k in v) v[k] = String(v[k]).trim();
-  let closeAfter = "";
+  let closeAfter = "", goTo = "";
   if (kind === "quick") {
     if (!v.text) return;
     state.tasks.push({ id: uid(), text: v.text, date: v.date || "", time: v.date ? v.time || "" : "", area: v.area || "personal", done: false, created: today() });
   } else if (kind === "post") {
-    state.igExtra.push({ id: "x" + uid(), date: v.date, time: v.time, f: v.f, title: v.title, cap: v.cap, need: v.need, how: [] });
+    state.igExtra.push({ id: "x" + uid(), date: v.date, time: v.time, f: v.f, title: v.title, cap: v.cap, need: v.need });
   } else if (kind === "contact") {
-    const c = { id: uid(), name: v.name, company: v.company, phone: v.phone, email: v.email, status: v.status, notes: v.notes, followups: [], log: [{ date: today(), text: "Contacto creado" }] };
+    const c = { id: uid(), name: v.name, company: v.company, phone: v.phone, email: v.email, status: v.status || "lead",
+      service: v.service, value: v.value, source: v.source, link: "", notes: v.notes, followups: [], log: [{ date: today(), type: "note", text: "Cliente creado" }] };
     if (v.date) c.followups.push({ id: uid(), date: v.date, reason: v.reason || "Contactar", done: false });
-    state.contacts.push(c); openContacts.add(c.id);
+    state.contacts.push(c);
+    goTo = "freelance:" + c.id;
   } else if (kind === "fu") {
     findContact(f.dataset.cid).followups.push({ id: uid(), date: v.date, reason: v.reason, done: false });
   } else if (kind === "log") {
-    const c = findContact(f.dataset.cid); (c.log ||= []).unshift({ date: today(), text: v.text });
-  } else if (kind === "cedit") {
-    Object.assign(findContact(f.dataset.cid), { name: v.name, company: v.company, phone: v.phone, email: v.email });
+    const c = findContact(f.dataset.cid);
+    (c.log ||= []).unshift({ date: v.date || today(), type: v.type || "note", text: v.text });
   } else if (kind === "uxtask") {
     state.unixo.phases.find(p => p.id === f.dataset.pid).tasks.push({ id: uid(), text: v.text, date: v.date || "", done: false });
   } else if (kind === "uxedit") {
@@ -638,16 +904,28 @@ document.addEventListener("submit", e => {
     state.unixo.phases.push({ id: uid(), name: v.name, tasks: [] });
   }
   const d = readDrafts(); delete d[draftId(f)]; writeDrafts(d);
-  save(); render();
+  save();
+  if (f.closest("dialog")) { f.reset(); f.closest("dialog").close(); }
+  if (goTo) { location.hash = goTo; return; }
+  render();
   if (closeAfter) document.querySelector(`details[data-keep="${closeAfter}"]`)?.removeAttribute("open");
-  if (kind === "quick") document.getElementById("q-text")?.focus();
+  if (kind === "quick" && !f.closest("dialog")) document.getElementById("q-text")?.focus();
 });
 
-// Recordar qué fichas de contacto están abiertas entre repintados.
-document.addEventListener("toggle", e => {
-  const d = e.target;
-  if (d.classList && d.classList.contains("contact")) d.open ? openContacts.add(d.dataset.cid) : openContacts.delete(d.dataset.cid);
-}, true);
+/* ---------- botón «+»: añadir desde cualquier sitio ---------- */
+const addDlg = document.getElementById("add");
+document.getElementById("fab").addEventListener("click", () => {
+  document.getElementById("add-body").innerHTML = `${quickForm()}
+    <div class="add-more">
+      <span class="muted small">O añade:</span>
+      <button type="button" class="btn" data-act="add-go" data-to="freelance:new" data-focus="input[name=name]">💼 Cliente</button>
+      <button type="button" class="btn" data-act="add-go" data-to="unixo" data-focus="form[data-form=uxtask] input[name=text]">🧥 Paso UNIXO</button>
+      <button type="button" class="btn" data-act="add-go" data-to="insta" data-focus="form[data-form=post] input[name=title]">📸 Publicación</button>
+    </div>`;
+  restoreDrafts(addDlg);
+  addDlg.showModal();
+  addDlg.querySelector("input[name=text]").focus();
+});
 
 /* ---------- avisos ---------- */
 // Sin servidor la app no puede mandar notificaciones con el móvil bloqueado.
@@ -670,7 +948,7 @@ function openRemind(kind, key) {
     d.setMinutes(d.getMinutes() - 30);
     if (iso(d) === it.date) time = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
   }
-  document.getElementById("r-title").textContent = it.title.replace(/^\p{Extended_Pictographic}\uFE0F?\s*/u, "");
+  document.getElementById("r-title").textContent = stripEmoji(it.title);
   document.getElementById("r-date").value = date;
   document.getElementById("r-time").value = time;
   remindDlg.showModal();
@@ -681,7 +959,7 @@ const icsText = s => String(s).replace(/\\/g, "\\\\").replace(/([,;])/g, "\\$1")
 function downloadReminder(it, date, time) {
   const stamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d+/, "");
   const start = date.replace(/-/g, "") + "T" + time.replace(":", "") + "00";
-  const title = it.title.replace(/^\p{Extended_Pictographic}\uFE0F?\s*/u, "");
+  const title = stripEmoji(it.title);
   const desc = [it.time ? `A las ${it.time}` : "", it.sub || ""].filter(Boolean).join(". ");
   const ics = [
     "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Organizador//ES", "CALSCALE:GREGORIAN",
@@ -733,13 +1011,13 @@ document.getElementById("import").addEventListener("change", async e => {
 /* ---------- arranque ---------- */
 window.addEventListener("hashchange", () => {
   render();
-  const focus = route()[1] && document.querySelector(`details[data-keep="run-${CSS.escape(route()[1])}"]`);
+  const focus = route()[0] === "correr" && route()[1] && document.querySelector(`details[data-keep="run-${CSS.escape(route()[1])}"]`);
   if (focus) { focus.open = true; focus.closest(".item").scrollIntoView({ block: "center" }); }
-  else window.scrollTo(0, 0);
+  else if (!document.activeElement || document.activeElement === document.body) window.scrollTo(0, 0);
 });
 
-// La app siempre abre en «Tu día». Si vuelves tras más de 15 minutos fuera
-// (o al día siguiente), también vuelve a «Tu día»; si no, sigue donde estabas.
+// La app siempre abre en «Mi día». Si vuelves tras más de 15 minutos fuera
+// (o al día siguiente), también vuelve a «Mi día»; si no, sigue donde estabas.
 const AWAY = 15 * 60 * 1000;
 let hiddenAt = 0;
 document.addEventListener("visibilitychange", () => {
@@ -748,6 +1026,7 @@ document.addEventListener("visibilitychange", () => {
   else if (today() !== renderedDay) render(); // solo si ha cambiado el día: así no se pierde lo que estés escribiendo
 });
 if (location.hash !== "#hoy") history.replaceState(null, "", "#hoy");
+save(); // guarda ya los datos de partida y los cambios de versión
 render();
 loadPhotos().then(() => { if (tab() === "correr") render(); }).catch(() => {});
 
