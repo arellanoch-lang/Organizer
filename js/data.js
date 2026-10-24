@@ -97,6 +97,31 @@ export const SEED_CONTACTS = [
     log: [{ date: "2026-09-23", text: "Boceto enviado. Por ahora no está interesada" }] },
 ];
 
+// Clientes añadidos después: se suman una sola vez a los datos del móvil
+// (si ya existen o los borraste, no se vuelven a añadir).
+export const EXTRA_CONTACTS = [
+  { id: "c-cavitbell", name: "Cavitbell", company: "Reservas online", phone: "", email: "", status: "propuesta",
+    notes: "Web: https://www.cavitbell.com/",
+    followups: [{ id: "f-cavitbell-1", date: "2026-10-30", reason: "Preguntar si han visto la propuesta", done: false }],
+    log: [{ date: "2026-10-23", text: "Propuesta enviada" }] },
+  { id: "c-hoyestetica", name: "Hoy Estética", company: "Reservas online", phone: "", email: "", status: "propuesta",
+    notes: "Contactada por WhatsApp.",
+    followups: [{ id: "f-hoyestetica-1", date: "2026-10-30", reason: "Preguntar si han visto la propuesta", done: false }],
+    log: [{ date: "2026-10-23", text: "Propuesta enviada por WhatsApp" }] },
+  { id: "c-chely", name: "Centro Belleza Chely", company: "Reservas online", phone: "", email: "", status: "propuesta",
+    notes: "Contactada por correo electrónico.",
+    followups: [{ id: "f-chely-1", date: "2026-10-30", reason: "Preguntar si han visto la propuesta", done: false }],
+    log: [{ date: "2026-10-23", text: "Propuesta enviada por correo electrónico" }] },
+  { id: "c-imagenvital", name: "Imagen Vital", company: "Reservas online", phone: "", email: "", status: "propuesta",
+    notes: "Contactada por WhatsApp y por correo electrónico.",
+    followups: [{ id: "f-imagenvital-1", date: "2026-10-30", reason: "Preguntar si han visto la propuesta", done: false }],
+    log: [{ date: "2026-10-23", text: "Propuesta enviada por WhatsApp y por correo electrónico" }] },
+  { id: "c-lepetit", name: "LEPETIT", company: "Reservas online", phone: "", email: "", status: "propuesta",
+    notes: "Contactada por WhatsApp.",
+    followups: [{ id: "f-lepetit-1", date: "2026-10-30", reason: "Preguntar si han visto la propuesta", done: false }],
+    log: [{ date: "2026-10-23", text: "Propuesta enviada por WhatsApp" }] },
+];
+
 // Plan de UNIXO montado a partir de los correos con proveedores (hasta el 8 oct).
 // Solo se carga si la sección UNIXO está vacía. Todo se puede editar en la app.
 export const UNIXO_SEED = {
