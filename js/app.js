@@ -1,4 +1,4 @@
-import { RACE, HYBRID, WARMUP, ZONES, RUN_WEEKS, RUN_STRATEGY, RUN_RULES, IG } from "./data.js";
+import { RACE, HYBRID, WARMUP, ZONES, RUN_WEEKS, RUN_STRATEGY, RUN_RULES, IG, OFFER_PAY, OFFER_HIGHLIGHTS } from "./data.js";
 import { state, save, replaceState, uid } from "./store.js";
 import { photos, loadPhotos, addPhoto, deletePhoto, exportPhotos, importPhotos } from "./photos.js";
 
@@ -597,9 +597,9 @@ function messagesSection(c) {
         <button type="button" class="btn" data-act="tpl-send" data-via="whatsapp" data-cid="${c.id}">💬 WhatsApp</button>
         <button type="button" class="btn" data-act="tpl-send" data-via="email" data-cid="${c.id}">✉️ Email</button>
       </div>
-      ${open.id === "oferta" ? `<p class="hint">Primero prepara el PDF de la oferta y luego envía este mensaje adjuntándolo.</p>` : ""}
+      ${open.id === "oferta" ? `<p class="hint">Primero prepara el PDF del presupuesto y luego envía este mensaje adjuntándolo.</p>` : ""}
     </div>` : ""}
-    <a class="btn offer-btn" href="#freelance:${c.id}:oferta">📄 Preparar oferta final (PDF)</a>
+    <a class="btn offer-btn" href="#freelance:${c.id}:oferta">📄 Preparar presupuesto (PDF)</a>
   </section>`;
 }
 
@@ -619,7 +619,7 @@ function viewTemplates() {
       <button type="button" class="btn ghost small" data-act="tpl-del" data-i="${i}">Borrar mensaje</button>
     </section>`).join("")}
     <button type="button" class="btn" data-act="tpl-add">+ Añadir mensaje</button>
-    <section class="card"><h2>Mis datos en la oferta</h2>
+    <section class="card"><h2>Mis datos en el presupuesto</h2>
       <p class="hint">Salen en el pie del PDF. Se guarda solo.</p>
       <div class="form">
         ${pf("name", "Nombre")}
@@ -628,11 +628,12 @@ function viewTemplates() {
         ${pf("web", "Web (opcional)", "text", "www.…")}
       </div></section>
     <section class="card"><h2>Condiciones por defecto</h2>
-      <p class="hint">Una por línea. Cada oferta nueva empieza con estas, y en cada una las puedes cambiar.</p>
+      <p class="hint">Una por línea. Cada presupuesto nuevo empieza con estas, y en cada uno las puedes cambiar.</p>
       <textarea data-act="ocond-default" rows="7">${esc(state.offerCond)}</textarea></section>`;
 }
 
-// Oferta final de un cliente: se crea la primera vez que la abres.
+// Presupuesto de un cliente: se crea la primera vez que lo abres.
+// Formato y textos de los presupuestos (identidad de Christel Arellano).
 function offerOf(c) {
   if (!c.offer) {
     state.offerSeq = (state.offerSeq || 0) + 1;
@@ -640,65 +641,84 @@ function offerOf(c) {
       num: `${new Date().getFullYear()}-${String(state.offerSeq).padStart(3, "0")}`,
       date: today(), valid: "30",
       title: c.service ? `${c.service} para ${c.name}` : `Propuesta para ${c.name}`,
-      desc: "", lines: [{ text: c.service || "Desarrollo del proyecto", price: c.value || "" }],
-      vat: "no", cond: state.offerCond,
+      desc: "", lines: [{ text: c.service || "Proyecto completo", price: c.value || "" }],
+      vat: "21", cond: state.offerCond,
     };
     save();
   }
-  return c.offer;
+  const o = c.offer;
+  // Campos añadidos después: se completan sin tocar lo que ya hubiera.
+  o.docType ??= "Presupuesto";
+  o.pay ??= OFFER_PAY;
+  o.highlights ??= structuredClone(OFFER_HIGHLIGHTS);
+  return o;
 }
 
 const money2 = n => new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR", minimumFractionDigits: 0, maximumFractionDigits: 2, useGrouping: "always" }).format(n || 0);
 const dmy = d => d ? d.split("-").reverse().join("/") : "";
+const monthYear = d => d ? new Intl.DateTimeFormat("es-ES", { month: "long", year: "numeric" }).format(new Date(d + "T12:00")) : "";
 
 function offerDoc(c) {
   const o = offerOf(c), me = state.profile;
   const lines = o.lines.filter(l => l.text || l.price);
   const sub = lines.reduce((a, l) => a + euros(l.price), 0);
-  const vat = o.vat === "21" ? sub * 0.21 : 0;
-  const total = sub + vat;
+  const withVat = sub * 1.21;
   const cond = String(o.cond || "").split("\n").map(x => x.replace(/^[\s•\-–]+/, "").trim()).filter(Boolean);
-  const contact = [me.email, me.phone, me.city, me.web, me.nif && "NIF " + me.nif].filter(Boolean);
-  return `<header class="of-head"><img src="brand/logo-horizontal.svg" alt="${esc(me.name || "Christel Arellano")}">
-      <div class="of-meta"><div class="of-tipo">Oferta nº ${esc(o.num)}</div><div class="of-dato">Fecha: ${esc(dmy(o.date))} · Validez: ${esc(o.valid)} días</div></div></header>
-    <div class="of-filete"></div>
-    <div class="of-para"><span class="of-tipo">Para</span><b>${esc(c.name)}</b>${c.person ? `<span>${esc(c.person)}</span>` : ""}</div>
-    <h1 class="of-title">${esc(o.title)}<span class="of-punto"></span></h1>
+  const hl = (o.highlights || []).filter(h => h.label || h.value);
+  const contact = [me.phone, me.email, me.city, me.web, me.nif && "NIF " + me.nif].filter(Boolean);
+  const vatLine = o.vat === "21" ? `+ IVA · ${money2(withVat)} en total · proyecto completo`
+    : o.vat === "inc" ? "IVA incluido · proyecto completo" : "IVA no incluido · proyecto completo";
+  const logo = `<div class="of-logo"><img src="brand/marca.png" alt=""><span><b>Christel Arellano</b><span>Web · Apps · Procesos</span></span></div>`;
+  return `<header class="of-head">${logo}
+      <div class="of-meta"><span>${esc(o.docType)} nº ${esc(o.num)}</span><span>${esc(dmy(o.date))} · Válido ${esc(o.valid)} días</span></div></header>
+    <p class="of-eyebrow">${esc(o.docType)} · ${esc(c.name)}</p>
+    <h1 class="of-title">${esc(o.title)}</h1>
     ${o.desc ? `<p class="of-desc">${esc(o.desc)}</p>` : ""}
-    <table class="of-table"><thead><tr><th>Concepto</th><th>Importe</th></tr></thead>
-      <tbody>${lines.map(l => `<tr><td>${esc(l.text)}</td><td>${euros(l.price) ? money2(euros(l.price)) : ""}</td></tr>`).join("") || `<tr><td colspan="2">Añade los conceptos</td></tr>`}</tbody></table>
-    <div class="of-totals">
-      ${o.vat === "21" ? `<div><span>Base imponible</span><span>${money2(sub)}</span></div><div><span>IVA (21 %)</span><span>${money2(vat)}</span></div>` : ""}
-      <div class="of-total"><span>Total · pago único</span><b>${money2(total)}</b></div>
-      ${o.vat === "no" ? `<p class="of-small">IVA no incluido.</p>` : o.vat === "inc" ? `<p class="of-small">IVA incluido.</p>` : ""}
+    <span class="of-rule"></span>
+    <p class="of-eyebrow">01 · Qué incluye</p>
+    <table class="of-table"><tbody>${lines.map(l => `<tr><td>${esc(l.text)}</td><td>${euros(l.price) ? money2(euros(l.price)) : ""}</td></tr>`).join("") || `<tr><td colspan="2">Añade los conceptos</td></tr>`}</tbody></table>
+    <p class="of-eyebrow">02 · ${esc(o.docType)}</p>
+    <div class="of-price">
+      <div class="of-total"><span class="of-big">${money2(sub)}</span><span class="of-vat">${esc(vatLine)}</span>
+        ${o.pay ? `<span class="of-pay">Forma de pago: ${esc(o.pay)}</span>` : ""}</div>
+      ${hl.length ? `<div class="of-hl">${hl.map(h => `<div><span>${esc(h.label)}</span><b>${esc(h.value)}</b></div>`).join("")}</div>` : ""}
     </div>
-    ${cond.length ? `<h2 class="of-h2">Condiciones</h2><ul class="of-cond">${cond.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
-    <div class="of-firma"><div><span class="of-tipo">Aceptación del cliente</span><span class="of-linea"></span><span class="of-small">Nombre, fecha y firma</span></div></div>
-    <footer class="of-pie"><img src="brand/simbolo.svg" alt=""><div><strong>${esc(me.name || "")}</strong>${contact.map(x => `<span>${esc(x)}</span>`).join("")}</div></footer>`;
+    ${cond.length ? `<p class="of-eyebrow">03 · Condiciones</p><ul class="of-cond">${cond.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
+    <div class="of-firma"><span class="of-eyebrow">Aceptación del cliente</span><span class="of-linea"></span><span class="of-small">Nombre, fecha y firma</span></div>
+    <footer class="of-pie"><span>Christel · ${esc(o.docType)} ${esc(c.name)}</span><span>${contact.map(esc).join(" · ")}</span></footer>`;
 }
 
 function viewOffer(c) {
   const o = offerOf(c);
-  const of = (k, label, attrs = "") => `<label>${label}<input data-act="ofield" data-cid="${c.id}" data-f="${k}" value="${esc(o[k])}" ${attrs}></label>`;
+  const k = `data-cid="${c.id}"`;
+  const of = (f, label, attrs = "") => `<label>${label}<input data-act="ofield" ${k} data-f="${f}" value="${esc(o[f])}" ${attrs}></label>`;
   return `<a class="back no-print" href="#freelance:${c.id}">‹ ${esc(c.name)}</a>
-    <header class="hero no-print"><p class="eyebrow">Oferta final</p><h1>${esc(c.name)}</h1>
+    <header class="hero no-print"><p class="eyebrow">${esc(o.docType)}</p><h1>${esc(c.name)}</h1>
       <p class="lead">Cambia lo que necesites: la vista previa de abajo se actualiza sola. Luego pulsa «Descargar PDF».</p></header>
     <section class="card no-print offer-form">
-      <div class="row">${of("num", "Nº de oferta")}${of("date", "Fecha", 'type="date"')}${of("valid", "Validez (días)", 'inputmode="numeric"')}</div>
+      <div class="row">${of("docType", "Tipo")}${of("num", "Número")}</div>
+      <div class="row">${of("date", "Fecha", 'type="date"')}${of("valid", "Validez (días)", 'inputmode="numeric"')}</div>
       ${of("title", "Título")}
-      <label>Descripción breve (opcional)<textarea data-act="ofield" data-cid="${c.id}" data-f="desc" rows="3" placeholder="Qué incluye y qué gana el negocio, en dos o tres frases.">${esc(o.desc)}</textarea></label>
-      <h3>Conceptos</h3>
+      <label>Frase de entrada (opcional)<textarea data-act="ofield" ${k} data-f="desc" rows="3" placeholder="Vuestros clientes encargan desde el móvil y lo recogen a la hora que eligen.">${esc(o.desc)}</textarea></label>
+      <h3>Qué incluye</h3>
       <div class="ol-list">${o.lines.map((l, i) => `<div class="ol-row">
-        <input data-act="oline" data-cid="${c.id}" data-i="${i}" data-f="text" value="${esc(l.text)}" placeholder="Concepto" aria-label="Concepto">
-        <input data-act="oline" data-cid="${c.id}" data-i="${i}" data-f="price" value="${esc(l.price)}" placeholder="0 €" inputmode="decimal" aria-label="Importe">
-        <button type="button" class="x" aria-label="Quitar" data-act="ol-del" data-cid="${c.id}" data-i="${i}">×</button></div>`).join("")}</div>
-      <button type="button" class="btn small" data-act="ol-add" data-cid="${c.id}">+ Añadir concepto</button>
-      <label>IVA<select data-act="ofield" data-cid="${c.id}" data-f="vat">
-        ${[["no", "Precio sin IVA (poner «IVA no incluido»)"], ["21", "Desglosar IVA 21 %"], ["inc", "Precio con IVA incluido"]].map(([k, v]) => `<option value="${k}"${o.vat === k ? " selected" : ""}>${v}</option>`).join("")}</select></label>
-      <label>Condiciones (una por línea)<textarea data-act="ofield" data-cid="${c.id}" data-f="cond" rows="6">${esc(o.cond)}</textarea></label>
+        <input data-act="oline" ${k} data-i="${i}" data-f="text" value="${esc(l.text)}" placeholder="Concepto" aria-label="Concepto">
+        <input data-act="oline" ${k} data-i="${i}" data-f="price" value="${esc(l.price)}" placeholder="0 €" inputmode="decimal" aria-label="Importe">
+        <button type="button" class="x" aria-label="Quitar" data-act="ol-del" ${k} data-i="${i}">×</button></div>`).join("")}</div>
+      <button type="button" class="btn small" data-act="ol-add" ${k}>+ Añadir concepto</button>
+      <label>IVA<select data-act="ofield" ${k} data-f="vat">
+        ${[["21", "Precio + IVA (muestra el total con IVA 21 %)"], ["no", "IVA no incluido"], ["inc", "IVA incluido"]].map(([v, t]) => `<option value="${v}"${o.vat === v ? " selected" : ""}>${t}</option>`).join("")}</select></label>
+      ${of("pay", "Forma de pago")}
+      <h3>Recuadros destacados</h3>
+      <div class="ol-list">${o.highlights.map((h, i) => `<div class="ol-row hl-row">
+        <input data-act="ohl" ${k} data-i="${i}" data-f="label" value="${esc(h.label)}" placeholder="Garantía" aria-label="Título">
+        <input data-act="ohl" ${k} data-i="${i}" data-f="value" value="${esc(h.value)}" placeholder="3 meses" aria-label="Valor">
+        <button type="button" class="x" aria-label="Quitar" data-act="ohl-del" ${k} data-i="${i}">×</button></div>`).join("")}</div>
+      <button type="button" class="btn small" data-act="ohl-add" ${k}>+ Añadir recuadro</button>
+      <label>Condiciones (una por línea)<textarea data-act="ofield" ${k} data-f="cond" rows="6">${esc(o.cond)}</textarea></label>
       ${/\[[^\]]+\]/.test(o.cond + o.title + o.desc) ? `<p class="warn small">Hay datos [entre corchetes] por completar.</p>` : ""}
       <div class="row"><button type="button" class="btn primary" data-act="of-print">📄 Descargar PDF</button>
-        <button type="button" class="btn" data-act="of-msg" data-cid="${c.id}">✉️ Mensaje para enviarla</button></div>
+        <button type="button" class="btn" data-act="of-msg" ${k}>✉️ Mensaje para enviarlo</button></div>
       <p class="hint">En el móvil se abre «Imprimir»: elige <b>Guardar como PDF</b> y luego adjúntalo en WhatsApp o en el email.</p>
     </section>
     <p class="eyebrow no-print">Vista previa</p>
@@ -806,6 +826,12 @@ document.addEventListener("input", e => {
   if (act === "tfield") { state.templates[+el.dataset.i][el.dataset.f] = el.value; return save(); }
   if (act === "pfield") { state.profile[el.dataset.f] = el.value.trim(); return save(); }
   if (act === "ocond-default") { state.offerCond = el.value; return save(); }
+  if (act === "ohl") {
+    const c = findContact(el.dataset.cid);
+    if (!c) return;
+    offerOf(c).highlights[+el.dataset.i][el.dataset.f] = el.value;
+    save(); return refreshOffer(c);
+  }
   if (act === "ofield" || act === "oline") {
     const c = findContact(el.dataset.cid), o = c && offerOf(c);
     if (!o) return;
@@ -1052,6 +1078,10 @@ document.addEventListener("click", e => {
   } else if (act === "tpl-del") {
     if (!confirm("¿Borrar este mensaje tipo?")) return;
     state.templates.splice(+el.dataset.i, 1);
+  } else if (act === "ohl-add") {
+    offerOf(findContact(el.dataset.cid)).highlights.push({ label: "", value: "" });
+  } else if (act === "ohl-del") {
+    offerOf(findContact(el.dataset.cid)).highlights.splice(+el.dataset.i, 1);
   } else if (act === "ol-add") {
     offerOf(findContact(el.dataset.cid)).lines.push({ text: "", price: "" });
   } else if (act === "ol-del") {

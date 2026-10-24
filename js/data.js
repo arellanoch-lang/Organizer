@@ -136,5 +136,11 @@ export const TEMPLATES_SEED = [
     text: "Hola {nombre}:\n\nTe adjunto la oferta final para {empresa} con el precio y las condiciones que hablamos: {precio}, pago único.\n\nSi te parece bien, respóndeme con un «adelante» y te cuento los siguientes pasos para empezar.\n\nUn saludo,\n{mi_nombre}" },
 ];
 
-// Condiciones por defecto de la oferta final. Lo que va [entre corchetes] hay que completarlo.
-export const OFFER_CONDITIONS = "Precio cerrado y pago único, sin cuotas mensuales.\nForma de pago: [50 % al aceptar la oferta y 50 % a la entrega].\nPlazo de entrega: [3] semanas desde la aceptación.\nIncluye [2] rondas de cambios y una sesión para explicarte cómo usarlo.\nValidez de la oferta: 30 días.";
+// Condiciones por defecto del presupuesto.
+export const OFFER_CONDITIONS = "3 meses de garantía desde la publicación: cualquier error se arregla gratis y os respondo en 48 horas laborables.\nCambios nuevos (otra sección, pagos online u otro idioma) se presupuestan aparte antes de empezar.\nEl plan de mantenimiento es opcional y se puede dar de baja cuando queráis.\nPlazo: publicada en unas 2 semanas desde vuestro sí; depende de lo rápido que nos paséis el material.\nValidez del presupuesto: 30 días.";
+export const OFFER_PAY = "50 % al aceptar y 50 % al publicar la web";
+export const OFFER_HIGHLIGHTS = [
+  { label: "Alojamiento", value: "0 €" },
+  { label: "Garantía", value: "3 meses" },
+  { label: "Mantenimiento, opcional", value: "29 €/mes + IVA" },
+];
