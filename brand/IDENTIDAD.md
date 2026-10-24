@@ -4,8 +4,9 @@ Identidad oficial de la actividad freelance de Christel Arellano. Úsala en todo
 lo que vea un cliente: presupuestos, propuestas, presentaciones, firma de email,
 redes y webs propias. Lámina de referencia: [`identidad-visual.png`](identidad-visual.png).
 
-> No confundir con el artefacto «Christel Arellano» (sistema de diseño en verde
-> #2F5D50 y terracota, con Fraunces): **no es su identidad**.
+> El sistema de diseño «Christel Arellano» de claude.ai está actualizado con esta
+> identidad (24/10/2026). La versión antigua en verde #2F5D50, terracota y Fraunces
+> era un error: **no es su identidad**.
 
 ## Logotipo
 
