@@ -10,49 +10,60 @@ export const HYBRID = { from: "2026-10-06", days: [2, 4], time: "19:00", title: 
 export const WARMUP = "12 sentadillas, 10 zancadas por pierna, 15 elevaciones de gemelo, 30\" de plancha y 10 puentes de glúteo.";
 
 export const ZONES = [
-  { k: "easy", name: "Suave", num: "<145 ppm", txt: "8:30–9:00/km. Andar en cuestas si hace falta." },
-  { k: "tempo", name: "Umbral", num: "160–170 ppm", txt: "6:30–6:45/km. Cómodamente duro." },
-  { k: "fast", name: "Series", num: ">170 ppm", txt: "6:00–6:20/km. Fuerte pero controlado." },
+  { k: "easy", name: "Suave", num: "<150 ppm", txt: "9:00–9:45/km. Andar cuando pase de 150." },
+  { k: "tempo", name: "Umbral", num: "160–170 ppm", txt: "6:40–6:45/km. Cómodamente duro, sin pasar de 170." },
+  { k: "fast", name: "Series", num: ">170 ppm", txt: "6:15–6:30/km. Fuerte pero controlado." },
 ];
 
-// [fecha, tipo, título, detalle, objetivo, hecho de partida]
+// [fecha del plan, tipo, título, detalle, objetivo, hecho, fecha real, cómo fue]
+// La fecha del plan identifica la sesión (no cambiarla). Si se hizo otro día,
+// va en «fecha real». «Cómo fue» rellena el desplegable 📝 con lo que se hizo
+// (lo que escribas en el móvil tiene prioridad).
 export const RUN_WEEKS = [
   { n: 1, focus: "Diagnóstico y empezar a ir suave de verdad", s: [
-    ["2026-10-05", "test", "Test 3 km", "Hecho: 6:51 – 7:16 – 6:32 (2,5 km reales). FC máx. 187.", "", true],
-    ["2026-10-07", "easy", "Rodaje 35'", "35 minutos continuos muy suaves.", "<145 ppm"],
-    ["2026-10-10", "easy", "Largo 7 km", "7 km suaves. Primer paso hacia los 12 km.", "<145 ppm"]] },
+    ["2026-10-05", "test", "Test 3 km", "Hecho: 6:51 – 7:16 – 6:32 (2,5 km reales). FC máx. 187.", "", true, "",
+      { km: "3,89", time: "28:32", hr: "168", text: "Salida rápida, bajón en el 2.º km y final apretado. Con 25 °. Estimación de 10K: 1h10–1h13." }],
+    ["2026-10-07", "easy", "Rodaje 35'", "35 minutos continuos muy suaves.", "<150 ppm", true, "2026-10-09",
+      { km: "3,86", time: "36:54", hr: "146", text: "Muchos tramos andando para no pasar de 150. Normal al empezar." }],
+    ["2026-10-10", "easy", "Largo 7 km", "7 km suaves. Primer paso hacia los 12 km.", "<150 ppm", true, "2026-10-11",
+      { km: "8,01", time: "1:18:31", hr: "152", feel: "4", text: "Primeros 45' alternando trote y paso; después trote casi seguido a 9:00–10:00/km. + 8 rectas de 30\" a 1,03 km." }]] },
   { n: 2, focus: "Velocidad corta y más volumen", s: [
-    ["2026-10-12", "fast", "6 × 400 m", "Recuperación 2' trotando o andando.", "6:00/km · >170 ppm"],
-    ["2026-10-14", "easy", "Rodaje 35' + rectas", "35' suaves y al final 4 × 20\" algo más rápido, con 1' andando.", "<145 ppm"],
-    ["2026-10-17", "easy", "Largo 8 km", "8 km suaves.", "<145 ppm"]] },
+    ["2026-10-12", "fast", "6 × 400 m", "Recuperación 2' trotando o andando.", "6:00/km · >170 ppm", true, "",
+      { km: "4,36", time: "36:47", hr: "162", text: "Series: 6:12 · 6:02 · 6:10 · 6:18 · 6:13 · 5:58. Muy regulares, la última la más rápida." }],
+    ["2026-10-14", "easy", "Rodaje 35' + rectas", "35' suaves y al final 4 × 20\" algo más rápido, con 1' andando.", "<150 ppm", true, "",
+      { km: "4,87", time: "43:04", hr: "151", text: "35' casi sin parar a ~9:15/km y ~150 ppm con 26 °. Gran mejora en 5 días." }],
+    ["2026-10-17", "easy", "Largo 8 km", "8 km suaves.", "<150 ppm", true, "2026-10-18",
+      { km: "8,05", time: "1:13:48", hr: "154", text: "40\"/km más rápida que el domingo anterior con las mismas pulsaciones. Última media hora seguida." }]] },
   { n: 3, focus: "Primeros bloques a ritmo umbral", s: [
-    ["2026-10-19", "fast", "5 × 800 m", "Recuperación 2' trotando.", "6:15/km"],
-    ["2026-10-21", "tempo", "3 × 8'", "Recuperación 2' trotando.", "6:40/km · 160–170 ppm"],
-    ["2026-10-24", "easy", "Largo 9 km", "9 km suaves.", "<145 ppm"]] },
+    ["2026-10-19", "fast", "5 × 800 m", "Recuperación 2' trotando.", "6:15/km", true, "2026-10-21",
+      { km: "5,04", time: "38:52", hr: "162", text: "6:16 · 6:14 · 6:38 · 6:36 · la última parada a 370 m por cansancio y una cuesta fuerte. Para series: buscar llano." }],
+    ["2026-10-21", "tempo", "3 × 8'", "Recuperación 2' trotando. Ritmo constante de principio a fin.", "6:40–6:45/km · 160–170 ppm", true, "2026-10-24",
+      { km: "4,06", time: "30:00", hr: "172", text: "En La Estanca (llano). Bloques a 6:27 · 6:33 · 6:37/km. Muy regular, pero más rápido de lo previsto y en el límite de la zona 5. Calentamiento aparte: 1,14 km a 8:57, 140 ppm." }],
+    ["2026-10-24", "easy", "Largo 9 km", "9 km muy suaves, aunque tengas que andar algo. Empieza con 5' andando rápido.", "<150 ppm", false, "2026-10-25"]] },
   { n: 4, focus: "Semana de asimilación (más ligera)", s: [
-    ["2026-10-26", "fast", "4 × 1 km", "Recuperación 2'30\" trotando.", "6:20/km"],
-    ["2026-10-28", "easy", "Rodaje 40'", "40' suaves.", "<145 ppm"],
-    ["2026-10-31", "easy", "Largo 7 km", "7 km suaves. Descarga antes del test.", "<145 ppm"]] },
+    ["2026-10-26", "easy", "Rodaje 40'", "40' suaves.", "<150 ppm"],
+    ["2026-10-28", "fast", "4 × 1 km", "Recuperación 2'30\" trotando. En llano. Empieza cada serie controlada.", "6:25–6:30/km"],
+    ["2026-10-31", "easy", "Largo 7 km", "7 km suaves. Descarga antes del test.", "<150 ppm"]] },
   { n: 5, focus: "Test de control y bloques más largos", s: [
     ["2026-11-02", "test", "Test 3 km", "Igual que el primero, pero regular: mismo ritmo los 3 km. Llano y sin paradas.", "A tope controlado"],
-    ["2026-11-04", "tempo", "2 × 12'", "Recuperación 3' trotando.", "6:35/km · 160–170 ppm"],
-    ["2026-11-07", "easy", "Largo 10 km", "10 km suaves. Ya tienes la distancia.", "<145 ppm"]] },
+    ["2026-11-04", "tempo", "2 × 12'", "Recuperación 3' trotando.", "6:40/km · 160–170 ppm"],
+    ["2026-11-07", "easy", "Largo 10 km", "10 km suaves. Ya tienes la distancia.", "<150 ppm"]] },
   { n: 6, focus: "Ritmo continuo", s: [
-    ["2026-11-09", "fast", "5 × 1 km", "Recuperación 2' trotando.", "6:15/km"],
-    ["2026-11-11", "tempo", "20' continuos", "20 minutos seguidos a ritmo umbral.", "6:35/km · 160–170 ppm"],
-    ["2026-11-14", "easy", "Largo 11 km", "Suaves, y los 2 últimos km a 6:45.", "<145 ppm, final más vivo"]] },
+    ["2026-11-09", "fast", "5 × 1 km", "Recuperación 2' trotando.", "6:20/km"],
+    ["2026-11-11", "tempo", "20' continuos", "20 minutos seguidos a ritmo umbral.", "6:40/km · 160–170 ppm"],
+    ["2026-11-14", "easy", "Largo 11 km", "Suaves, y los 2 últimos km a 6:45.", "<150 ppm, final más vivo"]] },
   { n: 7, focus: "Series largas a ritmo objetivo", s: [
     ["2026-11-16", "fast", "3 × 2 km", "Recuperación 3' trotando.", "6:25/km"],
-    ["2026-11-18", "easy", "Rodaje 40'", "40' suaves.", "<145 ppm"],
-    ["2026-11-21", "easy", "Largo 12 km", "12 km suaves. El más largo del plan.", "<145 ppm"]] },
+    ["2026-11-18", "easy", "Rodaje 40'", "40' suaves.", "<150 ppm"],
+    ["2026-11-21", "easy", "Largo 12 km", "12 km suaves. El más largo del plan.", "<150 ppm"]] },
   { n: 8, focus: "Última semana fuerte", s: [
-    ["2026-11-23", "fast", "6 × 1 km", "Recuperación corta: 1'30\" trotando.", "6:15/km"],
+    ["2026-11-23", "fast", "6 × 1 km", "Recuperación corta: 1'30\" trotando.", "6:20/km"],
     ["2026-11-25", "tempo", "25' a ritmo carrera", "25 minutos seguidos a ritmo objetivo.", "6:30/km"],
-    ["2026-11-28", "tempo", "10 km con final", "6 km suaves + 4 km a ritmo carrera.", "<145 → 6:30/km"]] },
+    ["2026-11-28", "tempo", "10 km con final", "6 km suaves + 4 km a ritmo carrera.", "<150 → 6:30/km"]] },
   { n: 9, focus: "Descarga: llegar fresca", s: [
     ["2026-11-30", "fast", "4 × 1 km", "Recuperación 2'. Sensaciones, no cansancio.", "6:30/km"],
-    ["2026-12-02", "easy", "Rodaje 25' + rectas", "25' suaves + 4 × 20\" ágiles.", "<145 ppm"],
-    ["2026-12-05", "easy", "Activación 15'", "15' muy suaves + 3 rectas cortas. Pierna suelta.", "<140 ppm"],
+    ["2026-12-02", "easy", "Rodaje 25' + rectas", "25' suaves + 4 × 20\" ágiles.", "<150 ppm"],
+    ["2026-12-05", "easy", "Activación 15'", "15' muy suaves + 3 rectas cortas. Pierna suelta.", "<145 ppm"],
     ["2026-12-06", "race", "Saucony 10K París", "Sigue la estrategia de carrera.", "6:30/km → 1:05:00"]] },
 ];
 
@@ -65,10 +76,11 @@ export const RUN_STRATEGY = [
 
 export const RUN_RULES = [
   "En series y umbral: 10–15' de calentamiento suave antes y 10' de trote o andar después.",
-  "Configura tu Garmin con FC máxima 188 (ahora tiene 175) para que sus zonas coincidan con las de este plan.",
-  "Los días suaves son suaves. Si las pulsaciones pasan de 145, baja el ritmo aunque parezca lentísimo.",
+  "Garmin configurado con FC máxima 188 y zonas a medida (9 oct): zona 2 = suave, zona 4 = umbral, zona 5 = series.",
+  "Los días suaves son suaves. Si las pulsaciones pasan de 150, anda 30–60 segundos y vuelve a trotar. Andar es parte del entreno.",
+  "Series y umbral en llano (por ejemplo, La Estanca). En cuesta, guíate por las pulsaciones, no por el ritmo.",
   "Constancia por encima de todo: 3 sesiones cada semana, sin parones de varias semanas.",
-  "Si tienes dolor (no cansancio) que cambia tu forma de correr, para.",
+  "Si tienes dolor (no cansancio) que cambia tu forma de correr, para y avisa.",
   "Si te saltas una sesión, no la recuperes: sigue con la siguiente.",
   "Tras el test del 2 de noviembre se ajustan ritmos, y si vas muy bien se revisa el objetivo.",
 ];
