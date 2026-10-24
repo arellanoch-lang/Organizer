@@ -140,6 +140,8 @@ PROVEEDORES
 // Mensajes tipo del CRM. Variables: {nombre} {empresa} {servicio} {precio}
 // {enlace} {fecha} {mi_nombre}. Se editan en Clientes → Plantillas.
 export const TEMPLATES_SEED = [
+  { id: "primer-contacto", name: "Primer contacto (reservas en su web)", subject: "Reservas online para {empresa}",
+    text: "¡Hola {empresa}! Soy Christel, creo sistemas de reservas online para centros como el vuestro.\n\nHe visto vuestra web y que las citas se piden solo por WhatsApp. Os propongo añadir un botón \"Reservar cita\" en vuestra web: la clienta elige tratamiento, día y hora, y la cita entra directa en vuestra agenda. Menos mensajes que contestar mientras trabajáis y sin cambiar vuestra web.\n\nAsí se ve un ejemplo:\nhttps://arellanoch-lang.github.io/bocetos/bienestar-demo/\n\nPago único, sin cuotas mensuales. Si os interesa, os preparo uno con vuestros servicios, sin compromiso 😊" },
   { id: "propuesta", name: "Envío de propuesta", subject: "Propuesta para {empresa}",
     text: "Hola {nombre}, ¿qué tal?\n\nTe envío la propuesta para {empresa}: {enlace}\n\nEn ella verás cómo funcionaría, qué ganaría tu negocio y el precio cerrado: {precio}, pago único.\n\nCualquier duda me dices y lo hablamos.\n\nUn saludo,\n{mi_nombre}" },
   { id: "seguimiento", name: "¿Qué te parece la propuesta?", subject: "¿Qué te ha parecido la propuesta?",
