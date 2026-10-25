@@ -39,7 +39,8 @@ export const RUN_WEEKS = [
       { km: "5,04", time: "38:52", hr: "162", text: "6:16 · 6:14 · 6:38 · 6:36 · la última parada a 370 m por cansancio y una cuesta fuerte. Para series: buscar llano." }],
     ["2026-10-21", "tempo", "3 × 8'", "Recuperación 2' trotando. Ritmo constante de principio a fin.", "6:40–6:45/km · 160–170 ppm", true, "2026-10-24",
       { km: "4,06", time: "30:00", hr: "172", text: "En La Estanca (llano). Bloques a 6:27 · 6:33 · 6:37/km. Muy regular, pero más rápido de lo previsto y en el límite de la zona 5. Calentamiento aparte: 1,14 km a 8:57, 140 ppm." }],
-    ["2026-10-24", "easy", "Largo 9 km", "9 km muy suaves, aunque tengas que andar algo. Empieza con 5' andando rápido.", "<150 ppm", false, "2026-10-25"]] },
+    ["2026-10-24", "easy", "Largo 9 km", "9 km muy suaves, aunque tengas que andar algo. Empieza con 5' andando rápido.", "<150 ppm", true, "2026-10-25",
+      { km: "9,23", time: "1:25:15", hr: "149", feel: "4", text: "Por debajo de 150 al día siguiente del umbral. Primeros 40' con alguna parada; después seguido y más rápida: últimos km a 8:47–8:54. La tirada más larga desde mayo." }]] },
   { n: 4, focus: "Semana de asimilación (más ligera)", s: [
     ["2026-10-26", "easy", "Rodaje 40'", "40' suaves.", "<150 ppm"],
     ["2026-10-28", "fast", "4 × 1 km", "Recuperación 2'30\" trotando. En llano. Empieza cada serie controlada.", "6:25–6:30/km"],
