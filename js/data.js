@@ -42,8 +42,9 @@ export const RUN_WEEKS = [
     ["2026-10-24", "easy", "Largo 9 km", "9 km muy suaves, aunque tengas que andar algo. Empieza con 5' andando rápido.", "<150 ppm", true, "2026-10-25",
       { km: "9,23", time: "1:25:15", hr: "149", feel: "4", text: "Por debajo de 150 al día siguiente del umbral. Primeros 40' con alguna parada; después seguido y más rápida: últimos km a 8:47–8:54. La tirada más larga desde mayo." }]] },
   { n: 4, focus: "Semana de asimilación (más ligera)", s: [
-    ["2026-10-26", "easy", "Rodaje 40'", "40' suaves.", "<150 ppm"],
-    ["2026-10-28", "fast", "4 × 1 km", "Recuperación 2'30\" trotando. En llano. Empieza cada serie controlada.", "6:25–6:30/km"],
+    ["2026-10-26", "easy", "Rodaje 40'", "40' suaves.", "<150 ppm", true, "2026-10-28",
+      { km: "4,52", time: "40:08", hr: "149", text: "Casi sin parar (una parada hacia el minuto 9). El rodaje suave más rápido hasta ahora: 8:53/km a 149 ppm (el 9 oct, 9:34/km a 146 andando mucho)." }],
+    ["2026-10-28", "fast", "4 × 1 km", "Esta semana no se hace: no se recupera, y el lunes 2 hay test de 3 km.", "—"],
     ["2026-10-31", "easy", "Largo 7 km", "7 km suaves. Descarga antes del test.", "<150 ppm"]] },
   { n: 5, focus: "Test de control y bloques más largos", s: [
     ["2026-11-02", "test", "Test 3 km", "Igual que el primero, pero regular: mismo ritmo los 3 km. Llano y sin paradas.", "A tope controlado"],

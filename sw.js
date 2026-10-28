@@ -1,6 +1,6 @@
 // Guarda la app en el móvil para que abra al instante y funcione sin conexión.
 // Al cambiar cualquier archivo, sube la versión para que se actualice.
-const CACHE = "organizador-v19";
+const CACHE = "organizador-v20";
 const FILES = [
   "./", "index.html", "manifest.webmanifest", "css/styles.css", "css/brand.css",
   "brand/marca.png", "brand/fonts/Jost.woff2", "brand/fonts/Manrope.woff2",
