@@ -90,12 +90,9 @@ export const RUN_RULES = [
 // Instagram: el calendario antiguo se ha borrado. El nuevo se cargará aquí.
 export const IG = { account: "@lemondenais" };
 
-// Clientes de partida (solo se cargan la primera vez que se abre la app).
-// Las fechas de seguimiento son propuestas: cámbialas desde la ficha.
+// Los clientes viven solo en el móvil (no en el código, que es público).
+// Se añaden desde la app con «+»; para no perderlos, haz copias de seguridad.
 export const SEED_CONTACTS = [];
-
-// Clientes añadidos después: se suman una sola vez a los datos del móvil
-// (si ya existen o los borraste, no se vuelven a añadir).
 export const EXTRA_CONTACTS = [];
 
 // Plan de UNIXO montado a partir de los correos con proveedores (hasta el 8 oct).
