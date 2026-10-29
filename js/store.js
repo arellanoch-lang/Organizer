@@ -1,4 +1,4 @@
-import { SEED_CONTACTS, UNIXO_SEED, EXTRA_CONTACTS, TEMPLATES_SEED, OFFER_CONDITIONS } from "./data.js";
+import { SEED_CONTACTS, UNIXO_SEED, EXTRA_CONTACTS, TEMPLATES_SEED, EXTRA_TEMPLATES, OFFER_CONDITIONS } from "./data.js";
 
 // Condiciones del primer borrador (identidad equivocada): si no se tocaron, se cambian por las buenas.
 const OLD_COND = "Precio cerrado y pago único, sin cuotas mensuales.\nForma de pago: [50 % al aceptar la oferta y 50 % a la entrega].\nPlazo de entrega: [3] semanas desde la aceptación.\nIncluye [2] rondas de cambios y una sesión para explicarte cómo usarlo.\nValidez de la oferta: 30 días.";
@@ -56,6 +56,13 @@ function load() {
     st.templatesSeeded = true;
   }
   if (!st.offerCond || st.offerCond === OLD_COND) st.offerCond = OFFER_CONDITIONS;
+  // Mensajes tipo nuevos: entran una sola vez.
+  st.templatesAdded ||= {};
+  for (const t of EXTRA_TEMPLATES) {
+    if (st.templatesAdded[t.id]) continue;
+    if (!st.templates.some(x => x.id === t.id)) st.templates.push(structuredClone(t));
+    st.templatesAdded[t.id] = true;
+  }
   return st;
 }
 

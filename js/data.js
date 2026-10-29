@@ -136,6 +136,12 @@ export const TEMPLATES_SEED = [
     text: "Hola {nombre}:\n\nTe adjunto la oferta final para {empresa} con el precio y las condiciones que hablamos: {precio}, pago único.\n\nSi te parece bien, respóndeme con un «adelante» y te cuento los siguientes pasos para empezar.\n\nUn saludo,\n{mi_nombre}" },
 ];
 
+// Mensajes tipo añadidos después: entran una sola vez en el móvil (si los borras, no vuelven).
+export const EXTRA_TEMPLATES = [
+  { id: "fresha-booksy", name: "Ya usa Fresha o Booksy", subject: "Una web propia para {empresa}",
+    text: "Hola {nombre}, ¿qué tal?\n\nHe visto que ya gestionas las citas con [Fresha/Booksy]. ¡Genial, no hace falta cambiarlo!\n\nLo que te propongo es una web propia para {empresa}, con tu marca, tus trabajos y tus precios, que lleve directamente a tu [Fresha/Booksy] para reservar. Así tus clientas te encuentran en Google con tu nombre, y no dentro de la plataforma junto a otros centros.\n\nSi te parece, te preparo una prueba sin compromiso para que la veas.\n\nUn saludo,\n{mi_nombre}" },
+];
+
 // Condiciones por defecto del presupuesto.
 export const OFFER_CONDITIONS = "3 meses de garantía desde la publicación: cualquier error se arregla gratis y os respondo en 48 horas laborables.\nCambios nuevos (otra sección, pagos online u otro idioma) se presupuestan aparte antes de empezar.\nEl plan de mantenimiento es opcional y se puede dar de baja cuando queráis.\nPlazo: publicada en unas 2 semanas desde vuestro sí; depende de lo rápido que nos paséis el material.\nValidez del presupuesto: 30 días.";
 export const OFFER_PAY = "50 % al aceptar y 50 % al publicar la web";
