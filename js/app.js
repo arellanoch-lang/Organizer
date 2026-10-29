@@ -46,11 +46,15 @@ const fname = f => f === "reel" ? "Reel" : f === "story" ? "Historia" : "Carruse
 const daysToRace = () => Math.ceil((new Date(`${RACE.date}T${RACE.time}`) - new Date()) / 864e5);
 
 /* ---------- fuentes de la agenda ---------- */
+// «Cómo fue» de cada entreno: lo que viene en el plan (data.js) más lo apuntado en el móvil, que manda.
+const RUN_LOG = Object.fromEntries(RUN_WEEKS.flatMap(w => w.s.map(r => ["s" + r[0], r[7] || {}])));
+const runNote = key => ({ ...(RUN_LOG[key] || {}), ...(state.runNotes[key] || {}) });
+
 function runSessions() {
   const out = [];
-  RUN_WEEKS.forEach(w => w.s.forEach(([date, type, title, detail, target, pre]) => {
+  RUN_WEEKS.forEach(w => w.s.forEach(([date, type, title, detail, target, pre, real]) => {
     const key = "s" + date;
-    out.push({ date: state.runMove[key] || date, planned: date, key, type, title, detail, target, week: w.n, done: state.runDone[key] ?? !!pre });
+    out.push({ date: state.runMove[key] || real || date, planned: date, key, type, title, detail, target, week: w.n, done: state.runDone[key] ?? !!pre });
   }));
   return out.sort((a, b) => a.date.localeCompare(b.date));
 }
@@ -233,7 +237,7 @@ function viewSemana() {
   const next = mon <= thisMon ? agenda(nextMon, addDays(nextMon, 6)) : [];
   const runs = items.filter(i => i.kind === "run" && i.key.startsWith("s"));
   const hybrids = items.filter(i => i.kind === "run" && i.key.startsWith("h"));
-  const km = runs.reduce((a, i) => a + kmOf((state.runNotes[i.key] || {}).km), 0);
+  const km = runs.reduce((a, i) => a + kmOf(runNote(i.key).km), 0);
   const title = mon === thisMon ? "Esta semana" : mon === addDays(thisMon, -7) ? "Semana pasada" : mon > thisMon ? "Semana que viene" : "Semana del " + fd(mon);
   const note = ((state.reviews ||= {})[mon] || {}).text || "";
   const byDay = {};
@@ -268,7 +272,7 @@ function viewSemana() {
 /* ---------- 10K ---------- */
 // Desplegable de cada entreno: datos, comentario y capturas del reloj.
 function runNotes(s) {
-  const n = state.runNotes[s.key] || {};
+  const n = runNote(s.key);
   const pics = photos.get(s.key) || [];
   const k = `data-key="${s.key}"`;
   const filled = [n.km && n.km + " km", n.time, n.hr && n.hr + " ppm", FEEL[n.feel]].filter(Boolean).join(" · ");
@@ -290,7 +294,7 @@ function runNotes(s) {
 function runProgress(sessions) {
   const t = today();
   const logged = sessions.map(s => {
-    const n = state.runNotes[s.key] || {};
+    const n = runNote(s.key);
     const km = kmOf(n.km), sec = secs(n.time);
     return { ...s, n, km, sec, pace: km && sec ? sec / km : 0 };
   });

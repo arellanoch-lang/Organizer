@@ -56,6 +56,14 @@ function load() {
     st.templatesSeeded = true;
   }
   if (!st.offerCond || st.offerCond === OLD_COND) st.offerCond = OFFER_CONDITIONS;
+  // Mensajes tipo añadidos después: entran una sola vez, al principio de la lista.
+  st.tplAdded ||= {};
+  for (const id of ["primer-contacto"]) {
+    if (st.tplAdded[id]) continue;
+    const t = TEMPLATES_SEED.find(x => x.id === id);
+    if (t && !st.templates.some(x => x.id === id)) st.templates.unshift(structuredClone(t));
+    st.tplAdded[id] = true;
+  }
   // Mensajes tipo nuevos: entran una sola vez.
   st.templatesAdded ||= {};
   for (const t of EXTRA_TEMPLATES) {
