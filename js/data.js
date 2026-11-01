@@ -46,7 +46,8 @@ export const RUN_WEEKS = [
       { km: "4,52", time: "40:08", hr: "149", text: "Casi sin parar (una parada hacia el minuto 9). El rodaje suave más rápido hasta ahora: 8:53/km a 149 ppm (el 9 oct, 9:34/km a 146 andando mucho)." }],
     ["2026-10-28", "fast", "4 × 1 km", "Recuperación 2'30\" trotando. En llano y controlada: ni un segundo más rápido, que el lunes hay test.", "6:25–6:30/km", true, "2026-10-30",
       { km: "4,72", time: "36:26", hr: "165", text: "Series: 6:39 · 6:41 · 6:39 · 6:28, con 22 °. 172–178 ppm al final de cada una. Las dos primeras costaron mucho y las dos últimas fueron las más fáciles. Calentamiento de 10' de trote suave aparte, sin aceleraciones; día después del hybrid." }],
-    ["2026-10-31", "easy", "Largo 7 km", "7 km muy suaves, el día después de las series. Domingo, descanso antes del test.", "<150 ppm"]] },
+    ["2026-10-31", "easy", "Largo 7 km", "7 km muy suaves, el día después de las series.", "<150 ppm", true, "2026-11-01",
+      { km: "8,01", time: "1:14:10", hr: "149", text: "8 km a 9:16/km con 8 °. Primera mitad en subida (355 → 414 m) con algunas paradas; segunda mitad seguida y a 8:30–9:00/km. El pico de 180 al arrancar es del sensor con frío." }]] },
   { n: 5, focus: "Test de control y bloques más largos", s: [
     ["2026-11-02", "test", "Test 3 km", "Igual que el primero, pero regular: mismo ritmo los 3 km. Llano y sin paradas.", "A tope controlado"],
     ["2026-11-04", "tempo", "2 × 12'", "Recuperación 3' trotando.", "6:40/km · 160–170 ppm"],
