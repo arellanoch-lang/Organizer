@@ -50,7 +50,7 @@ export const RUN_WEEKS = [
       { km: "8,01", time: "1:14:10", hr: "149", text: "8 km a 9:16/km con 8 °. Primera mitad en subida (355 → 414 m) con algunas paradas; segunda mitad seguida y a 8:30–9:00/km. El pico de 180 al arrancar es del sensor con frío." }]] },
   { n: 5, focus: "Test de control y bloques más largos", s: [
     ["2026-11-02", "test", "Test 3 km", "Igual que el primero, pero regular: mismo ritmo los 3 km. Llano y sin paradas.", "A tope controlado", true, "2026-11-04",
-      { km: "4,22", time: "33:41", hr: "160", text: "Test: 6:29 · 6:52 · 7:21 (≈20:42, 6:54/km). Salida rápida porque el reloj marcaba ritmo instantáneo y avisaba de «lenta»; además se notaba incubando algo. No vale como referencia limpia." }],
+      { km: "4,22", time: "33:41", hr: "160", text: "Test: 6:29 · 6:52 · 7:21 (≈20:42, 6:54/km). Salida rápida porque el reloj marcaba ritmo instantáneo y avisaba de «lenta»; además se notaba incubando algo. Pulso 170–178 todo el test, sin llegar a 180 (el 5 oct llegó a 187). El 3.er km, por calles del pueblo con cruces y curvas. No vale como referencia limpia." }],
     ["2026-11-04", "tempo", "2 × 12'", "Esta semana no se hace: el test ocupó su día. Lo que se salta no se recupera.", "—"],
     ["2026-11-07", "easy", "Largo 10 km", "10 km suaves. Solo si estás bien: con fiebre o malestar general, descanso; con un simple catarro, rodaje corto suave.", "<150 ppm"]] },
   { n: 6, focus: "Ritmo continuo", s: [
