@@ -52,10 +52,11 @@ export const RUN_WEEKS = [
     ["2026-11-02", "test", "Test 3 km", "Igual que el primero, pero regular: mismo ritmo los 3 km. Llano y sin paradas.", "A tope controlado", true, "2026-11-04",
       { km: "4,22", time: "33:41", hr: "160", text: "Test: 6:29 · 6:52 · 7:21 (≈20:42, 6:54/km). Salida rápida porque el reloj marcaba ritmo instantáneo y avisaba de «lenta»; además se notaba incubando algo. Pulso 170–178 todo el test, sin llegar a 180 (el 5 oct llegó a 187). El 3.er km, por calles del pueblo con cruces y curvas. No vale como referencia limpia." }],
     ["2026-11-04", "tempo", "2 × 12'", "Esta semana no se hace: el test ocupó su día. Lo que se salta no se recupera.", "—"],
-    ["2026-11-07", "easy", "Largo 10 km", "10 km suaves. Solo si estás bien: con fiebre o malestar general, descanso; con un simple catarro, rodaje corto suave.", "<150 ppm"]] },
+    ["2026-11-07", "tempo", "Largo con final a ritmo carrera", "Recién salida de un resfriado: 5 km suaves + 2 km a ritmo de carrera + suave.", "<150 ppm → 6:30–6:40/km", true, "2026-11-08",
+      { km: "7,33", time: "1:03:26", hr: "150", text: "5 km suaves (10:04 · 9:21 · 8:44 · 8:37 · 9:03; los km 3 y 4, los suaves más rápidos hasta ahora) + km 6 acelerando poco a poco (7:23) + km 7 a 6:30, ligeramente cuesta abajo, llegando a ~175 ppm. 6:30 hoy cuesta zona 5: el ritmo de 10K realista está en 6:40–6:50." }]] },
   { n: 6, focus: "Ritmo continuo", s: [
-    ["2026-11-09", "fast", "5 × 1 km", "Recuperación 2' trotando.", "6:20/km"],
-    ["2026-11-11", "tempo", "20' continuos", "20 minutos seguidos a ritmo umbral.", "6:40/km · 160–170 ppm"],
+    ["2026-11-09", "fast", "5 × 1 km", "Recuperación 2' trotando. En llano, con 12–15' de calentamiento y 3–4 aceleraciones. Ritmo de vuelta en el reloj.", "6:25–6:30/km", false, "2026-11-11"],
+    ["2026-11-11", "easy", "Rodaje 30–40' suave", "Tras el final a ritmo carrera del domingo: suave o descanso. El umbral de 20' de esta semana no se hace.", "<150 ppm", false, "2026-11-09"],
     ["2026-11-14", "easy", "Largo 11 km", "Suaves, y los 2 últimos km a 6:45.", "<150 ppm, final más vivo"]] },
   { n: 7, focus: "Series largas a ritmo objetivo", s: [
     ["2026-11-16", "fast", "3 × 2 km", "Recuperación 3' trotando.", "6:25/km"],
