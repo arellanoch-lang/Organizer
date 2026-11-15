@@ -54,14 +54,15 @@ export const RUN_WEEKS = [
     ["2026-11-04", "tempo", "2 × 12'", "Esta semana no se hace: el test ocupó su día. Lo que se salta no se recupera.", "—"],
     ["2026-11-07", "tempo", "Largo con final a ritmo carrera", "Recién salida de un resfriado: 5 km suaves + 2 km a ritmo de carrera + suave.", "<150 ppm → 6:30–6:40/km", true, "2026-11-08",
       { km: "7,33", time: "1:03:26", hr: "150", text: "5 km suaves (10:04 · 9:21 · 8:44 · 8:37 · 9:03; los km 3 y 4, los suaves más rápidos hasta ahora) + km 6 acelerando poco a poco (7:23) + km 7 a 6:30, ligeramente cuesta abajo, llegando a ~175 ppm. 6:30 hoy cuesta zona 5: el ritmo de 10K realista está en 6:40–6:50." }]] },
-  { n: 6, focus: "Ritmo continuo", s: [
-    ["2026-11-09", "fast", "5 × 1 km", "Recuperación 2' trotando. En llano, con 12–15' de calentamiento y 3–4 aceleraciones. Ritmo de vuelta en el reloj.", "6:25–6:30/km", false, "2026-11-11"],
-    ["2026-11-11", "easy", "Rodaje 30–40' suave", "Tras el final a ritmo carrera del domingo: suave o descanso. El umbral de 20' de esta semana no se hace.", "<150 ppm", false, "2026-11-09"],
-    ["2026-11-14", "easy", "Largo 11 km", "Suaves, y los 2 últimos km a 6:45.", "<150 ppm, final más vivo"]] },
-  { n: 7, focus: "Series largas a ritmo objetivo", s: [
-    ["2026-11-16", "fast", "3 × 2 km", "Recuperación 3' trotando.", "6:25/km"],
-    ["2026-11-18", "easy", "Rodaje 40'", "40' suaves.", "<150 ppm"],
-    ["2026-11-21", "easy", "Largo 12 km", "12 km suaves. El más largo del plan.", "<150 ppm"]] },
+  { n: 6, focus: "Semana parada (sin poder correr)", s: [
+    ["2026-11-09", "fast", "5 × 1 km", "Recuperación 2' trotando. En llano, con calentamiento de 1,5 km.", "6:25–6:30/km", true, "2026-11-15",
+      { km: "4,47", time: "34:20", hr: "169", text: "Tras una semana sin correr. En La Estanca, con 11 °: 6:26 · 6:32 · 6:26 · 6:52 (4 series; la última costó). 172–180 ppm en las series; el pico de 197 es un fallo del sensor. Las tres primeras, mejores que el 30 oct con 22 ° (6:39 · 6:41 · 6:39). Calentamiento aparte: 1,47 km a 8:14, 147 ppm." }],
+    ["2026-11-11", "easy", "Rodaje 30–40' suave", "No se hizo: semana sin poder correr.", "—", false, "2026-11-09"],
+    ["2026-11-14", "easy", "Largo 11 km", "No se hizo: semana sin poder correr. El largo pasa al sábado 21.", "—"]] },
+  { n: 7, focus: "Distancia y ritmo realista de carrera", s: [
+    ["2026-11-18", "easy", "Descanso o 30' muy suaves", "El día después de las series del domingo.", "<150 ppm", false, "2026-11-16"],
+    ["2026-11-16", "tempo", "3 × 2 km a ritmo de carrera", "Recuperación 3' trotando. En llano, con calentamiento y ritmo de vuelta en el reloj.", "6:40/km · ≤172 ppm", false, "2026-11-18"],
+    ["2026-11-21", "easy", "Largo 11–12 km", "Suaves. La sesión clave de la semana: sentir que la distancia de París está más que cubierta.", "<150 ppm"]] },
   { n: 8, focus: "Última semana fuerte", s: [
     ["2026-11-23", "fast", "6 × 1 km", "Recuperación corta: 1'30\" trotando.", "6:20/km"],
     ["2026-11-25", "tempo", "25' a ritmo carrera", "25 minutos seguidos a ritmo objetivo.", "6:30/km"],
