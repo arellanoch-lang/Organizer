@@ -65,9 +65,9 @@ export const RUN_WEEKS = [
     ["2026-11-16", "tempo", "3 × 2 km a ritmo de carrera", "Recuperación 3' trotando. En llano (La Estanca), con calentamiento y ritmo de vuelta en el reloj. El jueves hay hybrid: si las piernas llegan cargadas, 2 × 2 km.", "6:40/km · ≤172 ppm", false, "2026-11-20"],
     ["2026-11-21", "easy", "Largo 11 km", "Todo suave: el ritmo de carrera ya se hizo el viernes. La sesión clave de la semana.", "<150 ppm", false, "2026-11-22"]] },
   { n: 8, focus: "Última semana fuerte", s: [
-    ["2026-11-23", "easy", "Rodaje 30–40' suave", "El día después del largo del domingo. Las series de 1 km de esta semana no se hacen.", "<150 ppm"],
+    ["2026-11-23", "easy", "Rodaje 30–40' suave", "Viernes, antes del largo del domingo. El lunes no se corre (semana miércoles · viernes · domingo); las series de 1 km de esta semana no se hacen.", "<150 ppm", false, "2026-11-27"],
     ["2026-11-25", "tempo", "20' a ritmo carrera", "20 minutos seguidos a ritmo de París.", "6:40/km · ≤172 ppm"],
-    ["2026-11-28", "tempo", "10 km con final", "6 km suaves + 4 km a ritmo carrera.", "<150 → 6:40/km"]] },
+    ["2026-11-28", "tempo", "10 km con final", "Domingo. 6 km suaves + 4 km a ritmo carrera. Último entreno largo antes de París.", "<150 → 6:40/km", false, "2026-11-29"]] },
   { n: 9, focus: "Descarga: llegar fresca", s: [
     ["2026-11-30", "fast", "4 × 1 km", "Recuperación 2'. Sensaciones, no cansancio.", "6:30/km"],
     ["2026-12-02", "easy", "Rodaje 25' + rectas", "25' suaves + 4 × 20\" ágiles.", "<150 ppm"],
