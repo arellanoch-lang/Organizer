@@ -62,7 +62,8 @@ export const RUN_WEEKS = [
   { n: 7, focus: "Distancia y ritmo realista de carrera", s: [
     ["2026-11-18", "easy", "Rodaje 30' muy suave", "En lugar de las series del miércoles.", "<150 ppm", true, "",
       { km: "3,46", time: "30:05", hr: "148", text: "Muy suave, con 18 °. Primeros minutos a 7:40–8:00 cuesta abajo (375 → 355 m); después 8:30–9:30 en llano, con el pulso subiendo poco a poco de 130 a 155." }],
-    ["2026-11-16", "tempo", "3 × 2 km a ritmo de carrera", "Recuperación 3' trotando. En llano (La Estanca), con calentamiento y ritmo de vuelta en el reloj. El jueves hay hybrid: si las piernas llegan cargadas, 2 × 2 km.", "6:40/km · ≤172 ppm", false, "2026-11-20"],
+    ["2026-11-16", "tempo", "3 × 2 km a ritmo de carrera", "Recuperación 3' trotando. En llano (La Estanca), con calentamiento y ritmo de vuelta en el reloj. El jueves hay hybrid: si las piernas llegan cargadas, 2 × 2 km.", "6:40/km · ≤172 ppm", true, "2026-11-21",
+      { km: "7,67", time: "59:57", hr: "160", text: "Series de 2 km: 13:36 (6:53 · 6:43), 13:37 (6:44 · 6:53) y 13:43 (6:52 · 6:51); unas 6:49/km de media, con 10 °. Muy regular, sin salir rápida. Pulso 160–165 en la 1.ª y 170–175 en la 3.ª (máx. 179). Calentamiento de 1 km a 9:05." }],
     ["2026-11-21", "easy", "Largo 11 km", "Todo suave: el ritmo de carrera ya se hizo el viernes. La sesión clave de la semana.", "<150 ppm", false, "2026-11-22"]] },
   { n: 8, focus: "Última semana fuerte", s: [
     ["2026-11-23", "easy", "Rodaje 30–40' suave", "Viernes, antes del largo del domingo. El lunes no se corre (semana miércoles · viernes · domingo); las series de 1 km de esta semana no se hacen.", "<150 ppm", false, "2026-11-27"],
