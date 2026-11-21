@@ -1,7 +1,7 @@
 // Contenido fijo de los planes (el 10K sale del artefacto «Plan 10K París»).
 // Lo que marques como hecho se guarda aparte.
 
-export const RACE = { date: "2026-12-06", time: "09:00", name: "Saucony 10K París", goal: "1:05:00" };
+export const RACE = { date: "2026-12-06", time: "09:00", name: "Saucony 10K París", goal: "1:08:00" };
 
 // Hybrid: clase fija martes y jueves a las 19:00 (se repite todas las semanas).
 export const HYBRID = { from: "2026-10-06", days: [2, 4], time: "19:00", title: "Hybrid" };
@@ -67,20 +67,20 @@ export const RUN_WEEKS = [
     ["2026-11-21", "easy", "Largo 11 km", "Todo suave: el ritmo de carrera ya se hizo el viernes. La sesión clave de la semana.", "<150 ppm", false, "2026-11-22"]] },
   { n: 8, focus: "Última semana fuerte", s: [
     ["2026-11-23", "easy", "Rodaje 30–40' suave", "Viernes, antes del largo del domingo. El lunes no se corre (semana miércoles · viernes · domingo); las series de 1 km de esta semana no se hacen.", "<150 ppm", false, "2026-11-27"],
-    ["2026-11-25", "tempo", "20' a ritmo carrera", "20 minutos seguidos a ritmo de París.", "6:40/km · ≤172 ppm"],
-    ["2026-11-28", "tempo", "10 km con final", "Domingo. 6 km suaves + 4 km a ritmo carrera. Último entreno largo antes de París.", "<150 → 6:40/km", false, "2026-11-29"]] },
+    ["2026-11-25", "tempo", "20' a ritmo carrera", "20 minutos seguidos a ritmo de París.", "6:50/km · ≤172 ppm"],
+    ["2026-11-28", "tempo", "10 km con final", "Domingo. 6 km suaves + 4 km a ritmo carrera. Último entreno largo antes de París.", "<150 → 6:50/km", false, "2026-11-29"]] },
   { n: 9, focus: "Descarga: llegar fresca", s: [
     ["2026-11-30", "fast", "4 × 1 km", "Recuperación 2'. Sensaciones, no cansancio.", "6:30/km"],
     ["2026-12-02", "easy", "Rodaje 25' + rectas", "25' suaves + 4 × 20\" ágiles.", "<150 ppm"],
     ["2026-12-05", "easy", "Activación 15'", "15' muy suaves + 3 rectas cortas. Pierna suelta.", "<145 ppm"],
-    ["2026-12-06", "race", "Saucony 10K París", "Sigue la estrategia de carrera.", "6:30/km → 1:05:00"]] },
+    ["2026-12-06", "race", "Saucony 10K París", "Sigue la estrategia de carrera.", "6:50/km → 1:08:00 o menos"]] },
 ];
 
 export const RUN_STRATEGY = [
-  ["Km 1–2", "6:40/km. Sales con la emoción y la gente; contente aunque te parezca lento."],
-  ["Km 3–8", "6:30/km clavado. Mira el reloj cada km, no cada minuto."],
-  ["Km 9–10", "Lo que quede. Si vas bien, aprieta a 6:15 o más."],
-  ["Antes", "Desayuno conocido 2–3 h antes. Nada nuevo ese día: ni zapatillas, ni geles, ni ropa."],
+  ["Km 1–3", "6:55/km. Sales con la emoción y la gente: frénate aunque te parezca lento."],
+  ["Km 4–8", "6:50/km. Mira el ritmo de vuelta cada km, no el instantáneo, y no sigas a nadie."],
+  ["Km 9–10", "Si te queda energía, aprieta lo que puedas. Objetivo: 1h08 o menos, acabando fuerte y adelantando."],
+  ["Antes", "Desayuno ensayado 2,5–3 h antes. Nada nuevo ese día: ni zapatillas, ni geles, ni ropa."],
 ];
 
 export const RUN_RULES = [

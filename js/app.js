@@ -352,7 +352,7 @@ function viewCorrer() {
   return `<header class="bib">
       <p class="eyebrow">${esc(RACE.name)} · domingo 6 de diciembre de 2026</p>
       <h1>Objetivo <span>${RACE.goal}</span></h1>
-      <div class="facts"><span>Ritmo <b>6:30/km</b></span><span>Días <b>L · X · S</b></span><span>FC máx. <b>188</b></span>${days > 0 ? `<span>Faltan <b>${days} días</b></span>` : `<span><b>¡Día de carrera!</b></span>`}</div>
+      <div class="facts"><span>Ritmo <b>6:50/km</b></span><span>Días <b>L · X · S</b></span><span>FC máx. <b>188</b></span>${days > 0 ? `<span>Faltan <b>${days} días</b></span>` : `<span><b>¡Día de carrera!</b></span>`}</div>
     </header>
     ${runProgress(sessions)}
     <details class="card" data-keep="zones"><summary>Zonas de pulso</summary><div class="zones">${ZONES.map(z => `<div class="zone" style="--c:var(--r-${z.k})"><strong>${z.name}</strong><span class="mono">${esc(z.num)}</span><small>${esc(z.txt)}</small></div>`).join("")}</div></details>
