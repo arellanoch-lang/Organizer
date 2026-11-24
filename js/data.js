@@ -68,7 +68,8 @@ export const RUN_WEEKS = [
       { km: "10,01", time: "1:26:32", hr: "152", text: "Km: 7:59 · 8:25 · 8:38 · 8:51 · 9:19 · 9:30 · 8:38 · 8:22 · 8:33 · 8:14, con 11 ° y algo de subida en los km 1–4 y 6–7. 8:39/km de media (máx. 166 ppm): 35\"/km más rápida que el largo del 25 oct con el mismo pulso. El km 1 salió demasiado rápido y la media se quedó 2 ppm por encima de 150. Después, 5 rectas de ~25\" a 4:20–5:00/km con recuperación andando (máx. 173 ppm): bien hechas, cortas y sin fatiga." }]] },
   { n: 8, focus: "Última semana fuerte", s: [
     ["2026-11-23", "easy", "Rodaje 30–40' suave", "Viernes, antes del largo del domingo. El lunes no se corre (semana miércoles · viernes · domingo); las series de 1 km de esta semana no se hacen.", "<150 ppm", false, "2026-11-27"],
-    ["2026-11-25", "tempo", "20' a ritmo carrera", "20 minutos seguidos a ritmo de París.", "6:50/km · ≤172 ppm"],
+    ["2026-11-25", "tempo", "20' a ritmo carrera", "20 minutos seguidos a ritmo de París.", "6:50/km · ≤172 ppm", true, "2026-11-24",
+      { km: "2,87", time: "20:50", hr: "169", text: "Km: 7:13 · 7:08 · 6:56 (último tramo de 0,81 km), con 8 °, por calles de Corella y una subida suave en los primeros 8'. 7:15/km de media, 169 ppm y máx. 181. Salida rápida (~6:00 el primer minuto) y pulso en 168–175 casi todo el rato: más lento y con más pulso que los 3 × 2 km del sábado (6:49). Últimos 4', más rápida (~6:30)." }],
     ["2026-11-28", "tempo", "10 km con final", "Domingo. 6 km suaves + 4 km a ritmo carrera. Último entreno largo antes de París.", "<150 → 6:50/km", false, "2026-11-29"]] },
   { n: 9, focus: "Descarga: llegar fresca", s: [
     ["2026-11-30", "fast", "4 × 1 km", "Recuperación 2'. Sensaciones, no cansancio.", "6:30/km"],
